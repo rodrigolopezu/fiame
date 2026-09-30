@@ -1,0 +1,252 @@
+// FiaMe — Modelo de datos (DBML para dbdiagram.io)
+// Detalle y justificación de cada campo en docs/modelo-datos.md.
+
+Project fiame {
+  database_type: 'PostgreSQL'
+  Note: 'Dinero NUMERIC(12,2); tasas como fracción NUMERIC(12,9); tipo de cambio NUMERIC(8,3).'
+}
+
+TableGroup plataforma {
+  tienda
+  configuracion_tienda
+  usuario
+  auditoria
+}
+
+TableGroup catalogo_y_clientes {
+  producto
+  cliente
+  tasa
+}
+
+TableGroup credito {
+  venta
+  venta_detalle
+  cuota
+  estado_cuenta
+}
+
+TableGroup cobranza {
+  pago
+  pago_detalle
+}
+
+Table tasa {
+  id bigserial [pk]
+  tipo varchar(10) [not null, note: 'EFECTIVA | NOMINAL']
+  periodo varchar(15) [not null, note: 'ANUAL, SEMESTRAL, ..., DIARIA']
+  valor numeric(12,7) [not null, note: 'En porcentaje, tal como se ingresó']
+  capitalizacion varchar(15) [note: 'Solo NOMINAL; por defecto DIARIA']
+  tea numeric(12,9) [not null, note: 'TEA equivalente']
+  creado_en timestamptz [not null, default: `now()`]
+  Note: 'Inmutable: un cambio de condiciones crea una fila nueva.'
+}
+
+Table tienda {
+  id bigserial [pk]
+  nombre varchar(120) [not null]
+  giro varchar(40) [not null]
+  documento varchar(11) [unique, note: 'DNI o RUC']
+  telefono varchar(15)
+  direccion varchar(200)
+  estado varchar(10) [not null, default: 'ACTIVA', note: 'ACTIVA | BAJA']
+  fecha_alta timestamptz [not null, default: `now()`]
+  fecha_baja timestamptz
+}
+
+Table configuracion_tienda {
+  tienda_id bigint [pk, ref: - tienda.id]
+  moneda char(3) [not null, note: 'PEN | USD']
+  limite_credito numeric(12,2) [not null]
+  max_meses smallint [not null, note: '1-36']
+  dia_corte smallint [not null, note: '1-28']
+  dia_pago smallint [not null, note: '1-28']
+  tasa_compensatoria_id bigint [not null, ref: > tasa.id]
+  tasa_moratoria_id bigint [not null, ref: > tasa.id]
+  bloquear_con_vencido boolean [not null, default: true]
+}
+
+Table usuario {
+  id bigserial [pk]
+  usuario varchar(60) [not null, unique]
+  password_hash varchar(255) [not null]
+  rol varchar(10) [not null, note: 'ADMIN | VENDEDOR']
+  tienda_id bigint [ref: > tienda.id, note: 'Nulo si ADMIN']
+  activo boolean [not null, default: true]
+  ultimo_acceso timestamptz
+  creado_en timestamptz [not null, default: `now()`]
+}
+
+Table producto {
+  id bigserial [pk]
+  tienda_id bigint [not null, ref: > tienda.id]
+  nombre varchar(120) [not null]
+  descripcion varchar(500)
+  marca varchar(60)
+  proveedor varchar(120)
+  unidad_medida varchar(20) [not null]
+  imagen_url varchar(500)
+  moneda char(3) [not null]
+  precio_contado numeric(12,2) [not null]
+  precio_lista numeric(12,2) [not null, note: '>= precio_contado']
+  permite_pago_unico boolean [not null, default: true]
+  permite_cuotas boolean [not null, default: false]
+  activo boolean [not null, default: true]
+}
+
+Table cliente {
+  id bigserial [pk]
+  tienda_id bigint [not null, ref: > tienda.id]
+  nombres varchar(80) [not null]
+  apellidos varchar(80) [not null]
+  tipo_documento varchar(5) [not null, note: 'DNI | CE | RUC']
+  numero_documento varchar(12) [not null]
+  telefono varchar(15)
+  email varchar(120)
+  direccion varchar(200)
+  moneda char(3) [not null]
+  limite_credito numeric(12,2) [not null]
+  max_meses smallint [not null]
+  dia_corte smallint [not null]
+  dia_pago smallint [not null]
+  tasa_compensatoria_id bigint [not null, ref: > tasa.id]
+  tasa_moratoria_id bigint [not null, ref: > tasa.id]
+  token_portal_hash varchar(255)
+  estado varchar(10) [not null, default: 'ACTIVO', note: 'ACTIVO | BAJA']
+  fecha_alta timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tienda_id, numero_documento) [unique]
+  }
+}
+
+Table venta {
+  id bigserial [pk]
+  cliente_id bigint [not null, ref: > cliente.id]
+  fecha_hora timestamptz [not null, default: `now()`]
+  modalidad varchar(12) [not null, note: 'FIN_DE_MES | CUOTAS']
+  numero_cuotas smallint [note: 'Nulo si FIN_DE_MES']
+  moneda char(3) [not null]
+  tipo_cambio numeric(8,3)
+  tasa_compensatoria_id bigint [not null, ref: > tasa.id]
+  tasa_moratoria_id bigint [not null, ref: > tasa.id]
+  fecha_corte date [not null, note: 'Con cliente_id identifica su estado de cuenta']
+  fecha_pago date [not null]
+  capital numeric(12,2) [not null, note: 'Consume de la línea']
+  dias smallint [not null]
+  tasa_periodo numeric(12,9) [not null]
+  interes numeric(12,2) [not null]
+  total numeric(12,2) [not null]
+  tem numeric(12,9) [note: 'Solo CUOTAS']
+  estado varchar(10) [not null, default: 'VIGENTE', note: 'VIGENTE | PAGADA | ANULADA']
+  registrado_por bigint [not null, ref: > usuario.id]
+
+  indexes {
+    (cliente_id, fecha_corte)
+  }
+}
+
+Table venta_detalle {
+  id bigserial [pk]
+  venta_id bigint [not null, ref: > venta.id]
+  producto_id bigint [not null, ref: > producto.id]
+  descripcion varchar(120) [not null]
+  cantidad numeric(10,3) [not null]
+  precio_lista numeric(12,2) [not null]
+  moneda_producto char(3) [not null]
+  subtotal numeric(12,2) [not null]
+}
+
+Table cuota {
+  id bigserial [pk]
+  venta_id bigint [not null, ref: > venta.id]
+  numero smallint [not null]
+  fecha_corte date [not null, note: 'Con el cliente de la venta identifica su estado de cuenta']
+  fecha_vencimiento date [not null]
+  saldo_inicial numeric(12,2) [not null]
+  interes numeric(12,2) [not null]
+  amortizacion numeric(12,2) [not null]
+  monto numeric(12,2) [not null]
+  saldo_final numeric(12,2) [not null]
+  libera_linea numeric(12,2) [not null]
+  estado varchar(10) [not null, default: 'PENDIENTE', note: 'PENDIENTE | PAGADA']
+
+  indexes {
+    (venta_id, numero) [unique]
+  }
+}
+
+Table estado_cuenta {
+  id bigserial [pk]
+  cliente_id bigint [not null, ref: > cliente.id]
+  periodo_desde date [not null]
+  fecha_corte date [not null]
+  fecha_pago date [not null]
+  moneda char(3) [not null]
+  tasa_compensatoria_id bigint [not null, ref: > tasa.id, note: 'Vigente al corte; se usa para la mora']
+  tasa_moratoria_id bigint [not null, ref: > tasa.id]
+  total_capital numeric(12,2) [not null]
+  total_interes numeric(12,2) [not null]
+  total_a_pagar numeric(12,2) [not null]
+  limite_credito numeric(12,2) [not null]
+  credito_usado numeric(12,2) [not null]
+  credito_disponible numeric(12,2) [not null]
+  estado varchar(10) [not null, default: 'PENDIENTE', note: 'PENDIENTE | PAGADO (PAGADO si total = 0); vencido se deriva']
+  generado_en timestamptz [not null, default: `now()`]
+
+  indexes {
+    (cliente_id, fecha_corte) [unique]
+  }
+}
+
+Table pago {
+  id bigserial [pk]
+  fecha_pago date [not null]
+  medio varchar(15) [not null, note: 'EFECTIVO | YAPE | PLIN | TRANSFERENCIA | OTRO']
+  total_mora numeric(12,2) [not null]
+  total_interes numeric(12,2) [not null]
+  total_capital numeric(12,2) [not null]
+  total numeric(12,2) [not null]
+  linea_liberada numeric(12,2) [not null]
+  estado varchar(10) [not null, default: 'VALIDO', note: 'VALIDO | ANULADO']
+  motivo_anulacion varchar(200)
+  anulado_en timestamptz
+  registrado_por bigint [not null, ref: > usuario.id]
+  registrado_en timestamptz [not null, default: `now()`]
+  Note: 'Cliente y tienda se obtienen de los estados de cuenta que cancela (pago_detalle).'
+}
+
+Table pago_detalle {
+  id bigserial [pk]
+  pago_id bigint [not null, ref: > pago.id]
+  estado_cuenta_id bigint [not null, ref: > estado_cuenta.id]
+  exigible numeric(12,2) [not null]
+  dias_mora smallint [not null]
+  tasa_compensatoria_mora numeric(12,9) [not null]
+  interes_compensatorio_mora numeric(12,2) [not null]
+  tasa_moratoria numeric(12,9) [not null]
+  interes_moratorio numeric(12,2) [not null]
+  interes numeric(12,2) [not null]
+  capital numeric(12,2) [not null]
+  total numeric(12,2) [not null]
+}
+
+Table auditoria {
+  id bigserial [pk]
+  usuario_id bigint [ref: > usuario.id, note: 'Nulo si portal o proceso automático']
+  tienda_id bigint [ref: > tienda.id, note: 'Nulo si ADMIN']
+  accion varchar(40) [not null]
+  entidad varchar(30) [not null]
+  entidad_id bigint
+  datos jsonb
+  ip varchar(45)
+  fecha_hora timestamptz [not null, default: `now()`]
+}
+
+Table tipo_cambio {
+  fecha date [pk]
+  compra numeric(8,3) [not null]
+  venta numeric(8,3) [not null]
+  fuente varchar(40) [not null]
+  Note: 'Caché del tipo de cambio de referencia (API). La venta guarda el suyo.'
+}
