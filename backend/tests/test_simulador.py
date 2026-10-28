@@ -172,6 +172,7 @@ def test_caso_2_cuota_pagada_con_mora(caso_2):
     assert (p["dias_mora"], p["tasa_compensatoria_mora"], p["interes_compensatorio_mora"]) == (10, "0.8264838", "0.40")
     assert (p["tasa_moratoria"], p["interes_moratorio"], p["total"]) == ("1.0045120", "0.48", "49.13")
     assert (p["mora"], p["interes"], p["capital"]) == ("0.48", "4.94", "43.71")
+    assert p["recargo_mora"] == "0.88"  # 0.40 compensatorio + 0.48 moratorio
     assert caso_2["linea"]["disponible"] == "668.06"
     assert ec(caso_2, "EC-2026-12")["estado"] == "PENDIENTE"
 

@@ -192,6 +192,7 @@ class DeudaAlDia(BaseModel):
     interes_compensatorio: Decimal
     tasa_moratoria: Decimal
     interes_moratorio: Decimal
+    recargo: Decimal = Field(description="Intereses por mora: compensatorio + moratorio")
     total_a_pagar: Decimal
 
 
@@ -225,6 +226,7 @@ class DetallePagoSalida(BaseModel):
     interes_compensatorio_mora: Decimal
     tasa_moratoria: Decimal
     interes_moratorio: Decimal
+    recargo_mora: Decimal = Field(description="Intereses por mora: compensatorio + moratorio")
     mora: Decimal
     interes: Decimal
     capital: Decimal

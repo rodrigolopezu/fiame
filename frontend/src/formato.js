@@ -37,3 +37,29 @@ export const TIPOS_EVENTO = {
   ANULAR_VENTA: 'Anulación',
   CORTE: 'Corte',
 }
+
+export const ACCIONES = {
+  LOGIN: 'Inicio de sesión',
+  AVANZAR_FECHA: 'Fecha del sistema adelantada',
+  EDITAR_TIENDA: 'Configuración de la tienda',
+  CREAR_PRODUCTO: 'Producto creado',
+  EDITAR_PRODUCTO: 'Producto editado',
+  CREAR_CLIENTE: 'Cliente registrado',
+  EDITAR_CLIENTE: 'Cliente editado',
+  BAJA_CLIENTE: 'Cliente dado de baja',
+  REACTIVAR_CLIENTE: 'Cliente reactivado',
+  GENERAR_CODIGO_PORTAL: 'Código del portal generado',
+  REGISTRAR_VENTA: 'Venta registrada',
+  ANULAR_VENTA: 'Venta anulada',
+  GENERAR_CORTE: 'Estado de cuenta generado',
+  REGISTRAR_PAGO: 'Pago registrado',
+  ANULAR_PAGO: 'Pago anulado',
+}
+
+export const MEDIOS = [['EFECTIVO', 'Efectivo'], ['YAPE', 'Yape'], ['PLIN', 'Plin'], ['TRANSFERENCIA', 'Transferencia'], ['OTRO', 'Otro']]
+
+// Presentación al cliente: 4 decimales (el cálculo siempre usa 7, en el backend).
+export function tasaCorta(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `${Number(valor).toFixed(4)} %`
+}

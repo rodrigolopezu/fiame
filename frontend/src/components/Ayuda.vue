@@ -15,8 +15,8 @@ defineProps({ texto: { type: String, required: true } })
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: #e3e8e1;
-  color: var(--suave);
+  background: var(--lavanda);
+  color: var(--marca-fuerte);
   font-size: 10px;
   font-weight: 700;
   cursor: help;
@@ -31,7 +31,7 @@ defineProps({ texto: { type: String, required: true } })
   width: 240px;
   padding: 8px 10px;
   border-radius: 6px;
-  background: #1d2a22;
+  background: var(--texto);
   color: #fff;
   font-size: 12px;
   font-weight: 400;

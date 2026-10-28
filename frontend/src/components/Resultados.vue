@@ -73,23 +73,23 @@ const vencidos = computed(() => r.value.estados_cuenta.filter((ec) => ec.estado 
 
     <template v-else-if="vista === 'ventas'">
       <p v-if="!r.ventas.length" class="panel suave">No hay ventas registradas.</p>
-      <VentaDetalle v-for="v in r.ventas" :key="v.numero" :venta="v" />
+      <VentaDetalle v-for="v in r.ventas" :key="v.numero" :venta="v" modo="detallada" />
     </template>
 
     <template v-else-if="vista === 'estados'">
       <label class="check"><input v-model="ocultarVacios" type="checkbox" /> Ocultar estados de cuenta sin compras ni cuotas</label>
       <p v-if="!estados.length" class="panel suave">No hay estados de cuenta para mostrar.</p>
-      <EstadoCuentaDetalle v-for="ec in estados" :key="ec.codigo" :ec="ec" />
+      <EstadoCuentaDetalle v-for="ec in estados" :key="ec.codigo" :ec="ec" modo="detallada" />
     </template>
 
     <template v-else>
       <p v-if="!r.pagos.length" class="panel suave">No hay pagos registrados.</p>
-      <PagoDetalle v-for="p in r.pagos" :key="p.numero" :pago="p" :moneda="r.moneda" />
+      <PagoDetalle v-for="p in r.pagos" :key="p.numero" :pago="p" :moneda="r.moneda" modo="detallada" />
     </template>
   </div>
 </template>
 
 <style scoped>
 .resultados { display: flex; flex-direction: column; gap: 12px; }
-tr.corte td { background: #f7faf8; }
+tr.corte td { background: var(--panel-suave); }
 </style>

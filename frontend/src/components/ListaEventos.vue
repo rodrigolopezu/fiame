@@ -57,5 +57,5 @@ function resumen(ev) {
 <style scoped>
 .lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 li { border: 1px solid var(--borde); border-left: 3px solid var(--marca); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
-li.rechazado { border-left-color: var(--error); background: #fffafa; }
+li.rechazado { border-left-color: var(--error); background: var(--error-suave); }
 </style>

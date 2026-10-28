@@ -105,8 +105,17 @@ Cambiar los valores por defecto no afecta a clientes ya registrados.
   semáforo (verde / amarillo / rojo) derivado del puntaje.
 - Sirve para decidir si bajar el límite o subir la tasa en el siguiente periodo.
 - Ranking de clientes que más se demoran o que están vencidos.
-- *Pendiente*: definir los factores y sus pesos (puntualidad, días de mora promedio,
-  deuda vencida actual, uso de la línea, antigüedad) y los umbrales del semáforo.
+- Se calcula sobre los estados de cuenta con deuda que ya son exigibles (pagados o vencidos):
+
+  | Factor | Puntos | Cómo |
+  |---|---|---|
+  | Puntualidad | 50 | Proporción de estados de cuenta pagados hasta su fecha de pago |
+  | Días de mora promedio | 20 | 0 días = 20; 30 días o más = 0 (lineal) |
+  | Deuda vencida hoy | 20 | 20 si no tiene ningún estado de cuenta vencido; si no, 0 |
+  | Uso de la línea | 10 | Hasta 50 % = 10; hasta 80 % = 5; más = 0 |
+
+- Semáforo: **verde** ≥ 70, **amarillo** 40–69, **rojo** < 40. Un cliente sin pagos exigibles
+  figura "sin historial" (70 puntos).
 
 ## Estado de cuenta (EC)
 
@@ -131,7 +140,35 @@ Cambiar los valores por defecto no afecta a clientes ya registrados.
   (exigible + intereses por mora hasta hoy). Cuando se paga, los intereses por mora aparecen
   como **ítem separado** en la liquidación y en la constancia.
 
-## Portal del cliente (enlace)
+## Vista simple y vista detallada
+
+- Un interruptor general (en la barra del vendedor y en el portal) cambia el **nivel de
+  detalle** de la información. Se recuerda en el dispositivo.
+- **Los datos, los cálculos y las operaciones son los mismos en ambas vistas**: solo cambia
+  qué se muestra y con qué palabras.
+- **Simple** (por defecto): lenguaje cotidiano pensado para el bodeguero o el cliente, sin
+  términos financieros. Por ejemplo: "Ana tenía que pagar S/ 30.72 hasta el sábado 05/09" y
+  "Se atrasó 25 días: por el atraso se sumaron S/ 1.42, así que hoy debe S/ 32.14". Las
+  frases se redactan según quién lee: el vendedor ("Juan debe…") o el cliente ("Debes…").
+- **Detallada**: todas las cifras y términos (capital, TEA, TEM, tasa del plazo,
+  amortización, intereses compensatorio y moratorio, línea liberada), cada término con un
+  ícono **?** que explica su significado en una frase.
+- El simulador se muestra siempre en vista detallada, porque es una herramienta de
+  verificación.
+
+## Fecha del sistema (solo desarrollo)
+
+- Los estados de cuenta se generan al cierre de cada día de corte. En la versión local, cada
+  operación genera primero los cortes que falten hasta la fecha del sistema, sin necesidad de
+  una tarea programada.
+- Para probar cortes, vencimientos y mora sin esperar días reales, el vendedor puede
+  **adelantar** la fecha del sistema. La fecha nunca retrocede.
+
+## Portal del cliente (código)
+
+- El cliente entra a `/portal` con un código de 8 caracteres (`XXXX-XXXX`) que genera el vendedor.
+  Se guarda solo su hash; el código se muestra una única vez y generar uno nuevo invalida el
+  anterior. El vendedor puede compartirlo por WhatsApp.
 
 - Estados de cuenta (todos, incluidos los de S/ 0.00) y su estado.
 - Si tiene un EC vencido: cuánto debe **a hoy**, con el detalle de los intereses por mora.

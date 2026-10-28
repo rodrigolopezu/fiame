@@ -11,24 +11,12 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
-from app.finanzas.cronograma import capitalizar, cronograma_frances, liberacion_de_linea
-from app.finanzas.fechas import calcular_ciclo, dias_entre, fecha_pago_del_corte, sumar_meses
-from app.finanzas.mora import intereses_por_mora
-from app.finanzas.redondeo import a_porcentaje, r2
+from app.dominio import CERO, ReglaDeNegocio as Rechazo, calcular_venta, convertir, fmt, liquidar, validar_venta
+from app.finanzas.fechas import dias_entre, fecha_pago_del_corte, sumar_meses
+from app.finanzas.redondeo import a_porcentaje
 from app.finanzas.tasas import Tasa
 
 from . import esquemas as e
-
-CERO = Decimal("0.00")
-
-
-class Rechazo(Exception):
-    """Operación rechazada por una regla de negocio; el mensaje va a la bitácora."""
-
-
-def soles(monto: Decimal, moneda: str) -> str:
-    simbolo = "S/" if moneda == "PEN" else "US$"
-    return f"{simbolo} {monto:,.2f}"
 
 
 # ---------------------------------------------------------------- Estado interno
@@ -154,7 +142,7 @@ class Simulador:
         return [ec for ec in self.estados if ec.estado == "PENDIENTE"]
 
     def fmt(self, monto: Decimal) -> str:
-        return soles(monto, self.c.moneda)
+        return fmt(monto, self.c.moneda)
 
     # -- recorrido del tiempo
 
@@ -189,73 +177,42 @@ class Simulador:
 
     # -- RegistrarVenta (7.4) y GenerarCronograma (7.5)
 
-    def subtotal(self, item: e.ItemVenta, tipo_cambio: Decimal | None) -> Decimal:
-        """Conversión de moneda: el tipo de cambio es soles por dólar."""
-        importe = item.cantidad * item.precio_lista
-        if item.moneda == self.c.moneda:
-            return r2(importe)
-        if tipo_cambio is None:
-            raise Rechazo(f"'{item.descripcion}' está en {item.moneda}: se requiere el tipo de cambio")
-        return r2(importe * tipo_cambio) if item.moneda == "USD" else r2(importe / tipo_cambio)
-
     def registrar_venta(self, indice: int, ev: e.EventoVenta) -> str:
-        if self.c.bloquear_con_vencido:
-            vencidos = [ec.codigo for ec in self.pendientes() if ec.fecha_pago < ev.fecha]
-            if vencidos:
-                raise Rechazo(f"El cliente tiene estados de cuenta vencidos: {', '.join(vencidos)}")
         items = [
             e.ItemVentaSalida(descripcion=it.descripcion, cantidad=it.cantidad, precio_lista=it.precio_lista,
-                              moneda=it.moneda, subtotal=self.subtotal(it, ev.tipo_cambio))
+                              moneda=it.moneda,
+                              subtotal=convertir(it.cantidad * it.precio_lista, it.moneda, self.c.moneda,
+                                                 ev.tipo_cambio, it.descripcion))
             for it in ev.items
         ]
         capital = sum((it.subtotal for it in items), CERO)
-        disponible = self.limite - self.usado
-        if capital > disponible:
-            raise Rechazo(f"El capital {self.fmt(capital)} excede el crédito disponible {self.fmt(disponible)}")
-
-        corte, pago = calcular_ciclo(ev.fecha, self.c.dia_corte, self.c.dia_pago)
+        validar_venta(
+            modalidad=ev.modalidad, numero_cuotas=ev.numero_cuotas, max_meses=self.c.max_meses,
+            todos_pago_unico=all(it.permite_pago_unico for it in ev.items),
+            todos_cuotas=all(it.permite_cuotas for it in ev.items),
+            capital=capital, disponible=self.limite - self.usado, moneda=self.c.moneda,
+            vencidos=[ec.codigo for ec in self.pendientes() if ec.fecha_pago < ev.fecha],
+            bloquear_con_vencido=self.c.bloquear_con_vencido,
+        )
         tasa = self.tasa_compensatoria
-        dias = dias_entre(ev.fecha, pago)
-        tasa_periodo = tasa.efectiva(dias)
+        calculo = calcular_venta(capital, tasa, ev.fecha, self.c.dia_corte, self.c.dia_pago,
+                                 ev.modalidad, ev.numero_cuotas)
         venta = Venta(
             numero=len(self.ventas) + 1, evento=indice, fecha=ev.fecha, modalidad=ev.modalidad,
             numero_cuotas=ev.numero_cuotas if ev.modalidad == "CUOTAS" else None,
             moneda=self.c.moneda, tipo_cambio=ev.tipo_cambio, items=items, capital=capital,
             tasa_compensatoria=tasa, tasa_moratoria=self.tasa_moratoria,
-            fecha_corte=corte, fecha_pago=pago, dias=dias, tasa_periodo=tasa_periodo,
-            interes=CERO, total=CERO,
+            fecha_corte=calculo.fecha_corte, fecha_pago=calculo.fecha_pago, dias=calculo.dias,
+            tasa_periodo=calculo.tasa_periodo, interes=calculo.interes, total=calculo.total, tem=calculo.tem,
+            cuotas=[Cuota(**vars(c)) for c in calculo.cuotas],
         )
-
         if ev.modalidad == "FIN_DE_MES":
-            if not all(it.permite_pago_unico for it in ev.items):
-                raise Rechazo("Algún producto no permite el pago único a fin de mes")
-            venta.interes = r2(capital * tasa_periodo)
-            venta.total = capital + venta.interes
             detalle = (f"fin de mes: {self.fmt(capital)} + interés {self.fmt(venta.interes)} "
-                       f"({dias} días) = {self.fmt(venta.total)}, vence {pago:%d/%m/%Y}")
+                       f"({venta.dias} días) = {self.fmt(venta.total)}, vence {venta.fecha_pago:%d/%m/%Y}")
         else:
-            if not all(it.permite_cuotas for it in ev.items):
-                raise Rechazo("Algún producto no permite el pago en cuotas")
-            n = ev.numero_cuotas
-            if n is None or not 1 <= n <= self.c.max_meses:
-                raise Rechazo(f"El número de cuotas debe estar entre 1 y {self.c.max_meses}")
-            venta.total = capitalizar(capital, tasa_periodo)
-            venta.interes = venta.total - capital
-            venta.tem = tasa.tem()
-            filas = cronograma_frances(venta.total, venta.tem, n)
-            liberaciones = liberacion_de_linea(capital, [f.amortizacion for f in filas])
-            for fila, libera in zip(filas, liberaciones):
-                corte_k = sumar_meses(corte, fila.numero)
-                venta.cuotas.append(Cuota(
-                    numero=fila.numero, fecha_corte=corte_k,
-                    fecha_vencimiento=fecha_pago_del_corte(corte_k, self.c.dia_pago),
-                    saldo_inicial=fila.saldo_inicial, interes=fila.interes, cuota=fila.cuota,
-                    amortizacion=fila.amortizacion, saldo_final=fila.saldo_final, libera_linea=libera,
-                ))
-            detalle = (f"{n} cuotas: {self.fmt(capital)} con {dias} días de gracia = "
+            detalle = (f"{ev.numero_cuotas} cuotas: {self.fmt(capital)} con {venta.dias} días de gracia = "
                        f"{self.fmt(venta.total)}, primera cuota {self.fmt(venta.cuotas[0].cuota)} "
                        f"el {venta.cuotas[0].fecha_vencimiento:%d/%m/%Y}")
-
         self.ventas.append(venta)
         self.usado += capital
         return f"Venta {venta.numero}, {detalle}"
@@ -308,18 +265,17 @@ class Simulador:
         numero = len(self.pagos) + 1
         detalle = []
         for ec in pendientes[:ev.cantidad_estados]:
-            exigible = ec.total_a_pagar
-            dias_mora = max(0, dias_entre(ec.fecha_pago, ev.fecha))
-            m = intereses_por_mora(exigible, ec.tasa_compensatoria, ec.tasa_moratoria, dias_mora)
+            liq = liquidar(ec.total_capital, ec.total_interes, ec.tasa_compensatoria, ec.tasa_moratoria,
+                           ec.fecha_pago, ev.fecha)
             libera = sum((l.libera_linea for l in ec.lineas), CERO)
             detalle.append(e.DetallePagoSalida(
-                estado_cuenta=ec.codigo, fecha_pago_pactada=ec.fecha_pago, exigible=exigible,
-                dias_mora=dias_mora,
-                tasa_compensatoria_mora=a_porcentaje(m.tasa_compensatoria),
-                interes_compensatorio_mora=m.interes_compensatorio,
-                tasa_moratoria=a_porcentaje(m.tasa_moratoria), interes_moratorio=m.interes_moratorio,
-                mora=m.interes_moratorio, interes=ec.total_interes + m.interes_compensatorio,
-                capital=ec.total_capital, total=exigible + m.total, libera_linea=libera,
+                estado_cuenta=ec.codigo, fecha_pago_pactada=ec.fecha_pago, exigible=liq.exigible,
+                dias_mora=liq.dias_mora,
+                tasa_compensatoria_mora=a_porcentaje(liq.tasa_compensatoria_mora),
+                interes_compensatorio_mora=liq.interes_compensatorio_mora,
+                tasa_moratoria=a_porcentaje(liq.tasa_moratoria), interes_moratorio=liq.interes_moratorio,
+                recargo_mora=liq.total - liq.exigible,
+                mora=liq.mora, interes=liq.interes, capital=liq.capital, total=liq.total, libera_linea=libera,
             ))
             ec.estado, ec.pagado_con = "PAGADO", numero
             for l in ec.lineas:
@@ -384,14 +340,14 @@ class Simulador:
         estado, deuda = ec.estado, None
         if ec.estado == "PENDIENTE" and self.fecha_hasta > ec.fecha_pago:
             estado = "VENCIDO"
-            dias_mora = dias_entre(ec.fecha_pago, self.fecha_hasta)
-            m = intereses_por_mora(ec.total_a_pagar, ec.tasa_compensatoria, ec.tasa_moratoria, dias_mora)
+            liq = liquidar(ec.total_capital, ec.total_interes, ec.tasa_compensatoria, ec.tasa_moratoria,
+                           ec.fecha_pago, self.fecha_hasta)
             deuda = e.DeudaAlDia(
-                fecha=self.fecha_hasta, dias_mora=dias_mora,
-                tasa_compensatoria=a_porcentaje(m.tasa_compensatoria),
-                interes_compensatorio=m.interes_compensatorio,
-                tasa_moratoria=a_porcentaje(m.tasa_moratoria), interes_moratorio=m.interes_moratorio,
-                total_a_pagar=ec.total_a_pagar + m.total,
+                fecha=self.fecha_hasta, dias_mora=liq.dias_mora,
+                tasa_compensatoria=a_porcentaje(liq.tasa_compensatoria_mora),
+                interes_compensatorio=liq.interes_compensatorio_mora,
+                tasa_moratoria=a_porcentaje(liq.tasa_moratoria), interes_moratorio=liq.interes_moratorio,
+                recargo=liq.total - liq.exigible, total_a_pagar=liq.total,
             )
         return e.EstadoCuentaSalida(
             codigo=ec.codigo, periodo_desde=ec.periodo_desde, fecha_corte=ec.fecha_corte,

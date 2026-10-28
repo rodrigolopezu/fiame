@@ -484,6 +484,14 @@ Caché del tipo de cambio de referencia obtenido de la API.
 | venta | NUMERIC(8,3) | |
 | fuente | VARCHAR(40) | |
 
+### `sistema`
+Parámetros del sistema. Solo desarrollo: guarda la fecha simulada para probar el paso del tiempo.
+
+| Campo | Tipo | Restricciones |
+|---|---|---|
+| clave | VARCHAR(40) | PK |
+| valor | VARCHAR(200) | |
+
 ## Datos que no se guardan (se calculan)
 
 | Dato | Cómo |

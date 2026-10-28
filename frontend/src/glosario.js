@@ -1,0 +1,23 @@
+// Definiciones cortas de los términos financieros que aparecen en la vista detallada.
+export const GLOSARIO = {
+  tea: 'Tasa Efectiva Anual: cuánto crece la deuda en un año, ya incluida la capitalización. Es la tasa que se informa al cliente.',
+  tem: 'Tasa Efectiva Mensual: la TEA llevada a un mes de 30 días. Con ella se calcula el interés de cada cuota.',
+  tasaPlazo: 'Tasa efectiva para los días exactos que pasan entre la compra y la fecha de pago.',
+  nominal: 'Tasa que se reparte en partes iguales entre los periodos de capitalización. Su costo real es su equivalente efectiva.',
+  capitalizacion: 'Cada cuánto el interés se suma a la deuda y empieza, a su vez, a generar interés.',
+  capital: 'Lo que cuestan los productos al crédito (precio de lista), sin intereses.',
+  compensatorio: 'El costo de pagar después en lugar de al contado.',
+  moratorio: 'Recargo adicional por pagar después de la fecha pactada.',
+  compensatorioMora: 'Durante los días de atraso el interés normal sigue corriendo, además del moratorio.',
+  amortizacion: 'La parte de la cuota que reduce la deuda. El resto de la cuota es interés.',
+  saldo: 'Lo que falta pagar de la deuda.',
+  gracia: 'Días entre la compra y la primera fecha de pago: no se paga nada, pero el interés se suma a la deuda.',
+  capitalizado: 'La deuda más el interés de los días de gracia. Sobre este monto se calculan las cuotas.',
+  exigible: 'Lo que había que pagar en la fecha de pago, sin recargos.',
+  corte: 'Día en que se cierra el mes y se arma el estado de cuenta.',
+  linea: 'Monto máximo que el cliente puede deber a la vez. Se libera a medida que paga.',
+  liberaLinea: 'Cuánto crédito vuelve a quedar disponible con este pago.',
+  frances: 'Método francés: cuotas iguales. Al inicio pagan más interés y al final más deuda.',
+  imputacion: 'Orden en que se aplica el pago: primero la mora, luego el interés y al final el capital.',
+  tipoCambio: 'Soles por dólar usados para convertir un precio en otra moneda.',
+}
