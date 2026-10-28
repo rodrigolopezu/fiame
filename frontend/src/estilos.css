@@ -9,6 +9,7 @@
   --marca-fuerte: #4527d9;
   --marca-suave: #eeeaff;
   --marca-degradado: linear-gradient(135deg, #6c4dff 0%, #4527d9 100%);
+  --marca-degradado-fuerte: linear-gradient(135deg, #5a3bf0 0%, #3a1fc4 100%);
   --lavanda: #e6e0ff;
   --lavanda-fuerte: #d6ccff;
 
@@ -69,12 +70,13 @@ button {
   border-radius: var(--radio-chico);
   padding: 7px 14px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 button:hover { border-color: var(--marca); }
 button:focus-visible { outline: 3px solid var(--lavanda); outline-offset: 1px; }
-button.primario { background: var(--marca-degradado); border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgb(91 61 245 / 0.28); }
-button.primario:hover { background: var(--marca-fuerte); }
+/* Color sólido de respaldo + degradado encima: el botón nunca queda sin fondo (texto blanco sobre blanco). */
+button.primario { background-color: var(--marca); background-image: var(--marca-degradado); border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgb(91 61 245 / 0.28); }
+button.primario:hover { background-color: var(--marca-fuerte); background-image: var(--marca-degradado-fuerte); border-color: transparent; }
 button.enlace { border: none; background: none; color: var(--marca); padding: 2px 4px; box-shadow: none; }
 button.icono { border: none; background: none; color: var(--suave); padding: 2px 6px; font-size: 16px; line-height: 1; }
 button.icono:hover { color: var(--error); }
