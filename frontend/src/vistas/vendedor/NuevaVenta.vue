@@ -147,7 +147,7 @@ async function confirmar() {
             </tbody>
           </table>
 
-          <div class="grilla">
+          <div class="grilla opciones-venta">
             <label class="campo">
               <span>Modalidad <Ayuda texto="Fin de mes: un solo pago en la fecha de pago del ciclo. Cuotas: método francés, con gracia hasta la fecha de pago." /></span>
               <select v-model="modalidad">
@@ -182,6 +182,7 @@ async function confirmar() {
 <style scoped>
 .pagina { display: flex; flex-direction: column; gap: 14px; }
 h1 { font-size: 22px; }
+.opciones-venta { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 .columnas { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .izquierda, .derecha { display: flex; flex-direction: column; gap: 14px; }
 .resumen-cliente { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }

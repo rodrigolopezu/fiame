@@ -53,7 +53,7 @@ async function entrar() {
         </label>
         <p v-if="error" class="aviso">{{ error }}</p>
         <button class="primario" :disabled="enviando">{{ enviando ? 'Ingresando…' : 'Ingresar' }}</button>
-        <p class="chico suave">Entorno local de prueba: usuario <code>vendedor</code>, contraseña <code>fiame2026</code>.</p>
+        <p class="chico suave">Entorno local de prueba: usuario <code>vendedor</code>, <code>dueno</code> o <code>superadmin</code>, contraseña <code>fiame2026</code>.</p>
       </form>
     </div>
   </main>

@@ -1,7 +1,7 @@
 <script setup>
 import { dinero, fecha, tasa } from '../formato'
 import {
-  diaMes, estadoSimple, fraseAtraso, fraseEstadoCuenta, mayuscula, mes,
+  diaMes, estadoSimple, fraseAtraso, fraseEstadoCuenta, frasePago, mayuscula, mes,
 } from '../lenguaje'
 import { usarSimple } from '../vista'
 import Termino from './Termino.vue'
@@ -45,6 +45,9 @@ const nombreCliente = () => props.nombre || props.ec.cliente
 
     <p v-if="ec.deuda_al_dia" class="aviso">
       {{ fraseAtraso(ec.deuda_al_dia.dias_mora, ec.deuda_al_dia.recargo, ec.deuda_al_dia.total_a_pagar, ec.moneda, perspectiva, nombreCliente()) }}
+    </p>
+    <p v-if="ec.pago && Number(ec.total_a_pagar) > 0" :class="ec.pago.dias_mora ? 'aviso alerta' : 'chico suave'">
+      {{ frasePago(ec.pago, ec.moneda, perspectiva, nombreCliente()) }}
     </p>
     <p v-for="v in ec.vencidos_anteriores" :key="v.codigo" class="chico suave">
       Además, el pago de {{ mes(v.codigo) }} ({{ dinero(v.exigible, ec.moneda) }}) seguía pendiente al cierre de este mes.
@@ -113,6 +116,17 @@ const nombreCliente = () => props.nombre || props.ec.cliente
       <Termino clave="moratorio">moratorio</Termino> {{ dinero(ec.deuda_al_dia.interes_moratorio, ec.moneda) }}
       (TE{{ ec.deuda_al_dia.dias_mora }} {{ tasa(ec.deuda_al_dia.tasa_moratoria) }}).
       Debe hoy <strong>{{ dinero(ec.deuda_al_dia.total_a_pagar, ec.moneda) }}</strong>.
+    </div>
+
+    <div v-if="ec.pago && Number(ec.total_a_pagar) > 0" class="aviso" :class="ec.pago.dias_mora ? 'alerta' : 'info'">
+      <strong>Pagado el {{ fecha(ec.pago.fecha) }} (pago {{ ec.pago.numero }}){{ ec.pago.dias_mora ? ` con ${ec.pago.dias_mora} ${ec.pago.dias_mora === 1 ? 'día' : 'días'} de atraso` : ' a tiempo' }}.</strong>
+      <template v-if="ec.pago.dias_mora">
+        Intereses por mora: <Termino clave="compensatorioMora">compensatorio</Termino> {{ dinero(ec.pago.interes_compensatorio_mora, ec.moneda) }}
+        + <Termino clave="moratorio">moratorio</Termino> {{ dinero(ec.pago.interes_moratorio, ec.moneda) }}
+        = {{ dinero(ec.pago.recargo_mora, ec.moneda) }}.
+        Total pagado <strong>{{ dinero(ec.pago.total, ec.moneda) }}</strong> ({{ dinero(ec.pago.exigible, ec.moneda) }} exigible + mora).
+      </template>
+      <template v-else>Total pagado <strong>{{ dinero(ec.pago.total, ec.moneda) }}</strong>.</template>
     </div>
 
     <div class="pie chico suave">

@@ -4,7 +4,7 @@ import { sesion } from './sesion'
 const rutas = [
   { path: '/', component: () => import('./vistas/Inicio.vue') },
   { path: '/login', component: () => import('./vistas/Login.vue') },
-  { path: '/superadmin', component: () => import('./vistas/PanelRol.vue'), meta: { requiereSesion: true, roles: ['SUPERADMIN'] } },
+  { path: '/superadmin', component: () => import('./vistas/PanelSuperadmin.vue'), meta: { requiereSesion: true, roles: ['SUPERADMIN'] } },
   { path: '/admin', component: () => import('./vistas/PanelAdmin.vue'), meta: { requiereSesion: true, roles: ['ADMIN'] } },
   { path: '/portal', component: () => import('./vistas/portal/Portal.vue') },
   { path: '/simulador', component: () => import('./vistas/simulador/SimuladorVista.vue') },

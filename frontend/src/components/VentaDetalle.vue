@@ -18,7 +18,7 @@ const ESTADO_SIMPLE = { VIGENTE: 'Por pagar', PAGADA: 'Pagada', ANULADA: 'Anulad
   <article v-if="simple" class="panel">
     <div class="entre">
       <div>
-        <p class="suave chico">{{ venta.numero ? `Venta ${venta.numero} · ` : '' }}{{ diaYFecha(venta.fecha) }}<span v-if="venta.cliente"> · {{ venta.cliente }}</span></p>
+        <p class="suave chico">{{ venta.numero ? `Venta ${venta.numero} · ` : '' }}{{ diaYFecha(venta.fecha) }}<span v-if="venta.cliente"> · {{ venta.cliente }}</span><span v-if="venta.registrado_por"> · registrada por {{ venta.registrado_por }}</span></p>
         <h3 class="frase">{{ venta.items.map((i) => i.descripcion).join(', ') }}</h3>
       </div>
       <span class="fila">
@@ -62,7 +62,7 @@ const ESTADO_SIMPLE = { VIGENTE: 'Por pagar', PAGADA: 'Pagada', ANULADA: 'Anulad
   <!-- Vista detallada: cálculo completo -->
   <article v-else class="panel">
     <div class="entre">
-      <h3>Venta {{ venta.numero || '' }} · {{ fecha(venta.fecha) }}<span v-if="venta.cliente" class="suave"> · {{ venta.cliente }}</span></h3>
+      <h3>Venta {{ venta.numero || '' }} · {{ fecha(venta.fecha) }}<span v-if="venta.cliente" class="suave"> · {{ venta.cliente }}</span><span v-if="venta.registrado_por" class="suave chico"> · registrada por {{ venta.registrado_por }}</span></h3>
       <span class="fila">
         <slot name="acciones" />
         <span class="etiqueta neutra">{{ venta.modalidad === 'CUOTAS' ? `${venta.numero_cuotas} cuotas` : 'Fin de mes' }}</span>
