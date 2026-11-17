@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from app import rutas_portal, rutas_vendedor
+from app import rutas_portal, rutas_vendedor, rutas_auth, rutas_superadmin, rutas_admin, rutas_admin_clientes
 from app.dominio import ReglaDeNegocio
 from app.rutas import router
 from app.semilla import preparar
@@ -39,6 +39,10 @@ def regla_de_negocio(_: Request, error: ReglaDeNegocio):
 
 
 app.include_router(router)
+app.include_router(rutas_auth.router)
+app.include_router(rutas_superadmin.router)
+app.include_router(rutas_admin.router)
+app.include_router(rutas_admin_clientes.router)
 app.include_router(rutas_vendedor.router)
 app.include_router(rutas_portal.router)
 

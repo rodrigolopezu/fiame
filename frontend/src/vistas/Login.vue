@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { vendedor } from '../api'
 import Logo from '../components/Logo.vue'
-import { iniciar } from '../sesion'
+import { iniciar, sesion } from '../sesion'
 
 const ruta = useRoute()
 const router = useRouter()
@@ -18,7 +18,9 @@ async function entrar() {
   error.value = ''
   try {
     iniciar(await vendedor.login(usuario.value, clave.value))
-    router.push(ruta.query.siguiente || '/vendedor')
+    const destinos = { SUPERADMIN: '/superadmin', ADMIN: '/admin', VENDEDOR: '/vendedor' }
+    const destino = destinos[sesion.rol] || '/login'
+    router.push(typeof ruta.query.siguiente === 'string' && ruta.query.siguiente.startsWith(destino) ? ruta.query.siguiente : destino)
   } catch (e) {
     error.value = e.message
   } finally {
@@ -40,7 +42,7 @@ async function entrar() {
         </ul>
       </aside>
       <form @submit.prevent="entrar">
-        <h1>Ingreso del vendedor</h1>
+        <h1>Ingreso a FiaMe</h1>
         <label class="campo">
           <span>Usuario</span>
           <input v-model="usuario" autocomplete="username" required autofocus />
