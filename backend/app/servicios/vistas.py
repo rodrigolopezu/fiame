@@ -37,12 +37,27 @@ class ScoreVista(BaseModel):
 class VentaVista(e.VentaSalida):
     cliente_id: int
     cliente: str
+    registrado_por: str | None = None
+
+
+class PagoDeEstado(BaseModel):
+    """Cómo se pagó un estado de cuenta: cuándo, con cuántos días de atraso y qué mora se cobró."""
+    numero: int
+    fecha: date
+    medio: str
+    dias_mora: int
+    exigible: Decimal
+    interes_compensatorio_mora: Decimal
+    interes_moratorio: Decimal
+    recargo_mora: Decimal
+    total: Decimal
 
 
 class EstadoCuentaVista(e.EstadoCuentaSalida):
     id: int
     cliente_id: int
     cliente: str
+    pago: PagoDeEstado | None = None
 
 
 class PagoVista(e.PagoSalida):
@@ -51,6 +66,7 @@ class PagoVista(e.PagoSalida):
     moneda: str
     estado: str
     motivo_anulacion: str | None
+    registrado_por: str | None = None
 
 
 class ClienteResumen(BaseModel):
@@ -120,6 +136,7 @@ def venta_vista(v: m.Venta, cliente: m.Cliente) -> VentaVista:
             for c in v.cuotas
         ],
         cliente_id=cliente.id, cliente=cliente.nombre_completo,
+        registrado_por=v.registrador.usuario if v.registrador else None,
     )
 
 
@@ -155,6 +172,13 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
 
     pago = _pago_de(s, ec)
     comp, mor = ec.tasa_compensatoria, ec.tasa_moratoria
+    pago_del_estado = None
+    if pago is not None:
+        d = next(d for d in pago.detalle if d.estado_cuenta_id == ec.id)
+        pago_del_estado = PagoDeEstado(
+            numero=pago.id, fecha=pago.fecha_pago, medio=pago.medio, dias_mora=d.dias_mora, exigible=d.exigible,
+            interes_compensatorio_mora=d.interes_compensatorio_mora, interes_moratorio=d.interes_moratorio,
+            recargo_mora=d.total - d.exigible, total=d.total)
     return EstadoCuentaVista(
         id=ec.id, cliente_id=cliente.id, cliente=cliente.nombre_completo, codigo=ec.codigo,
         periodo_desde=ec.periodo_desde, fecha_corte=ec.fecha_corte, fecha_pago=ec.fecha_pago, moneda=ec.moneda,
@@ -172,6 +196,7 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
         total_capital=ec.total_capital, total_interes=ec.total_interes, total_a_pagar=ec.total_a_pagar,
         linea=e.LineaCredito(limite=ec.limite_credito, usado=ec.credito_usado, disponible=ec.credito_disponible),
         vencidos_anteriores=anteriores, estado=estado, pagado_con=pago.id if pago else None, deuda_al_dia=deuda,
+        pago=pago_del_estado,
     )
 
 
@@ -195,6 +220,7 @@ def pago_vista(p: m.Pago) -> PagoVista:
         linea_liberada=p.linea_liberada, cliente_id=cliente.id, cliente=cliente.nombre_completo,
         moneda=cliente.moneda,
         estado=p.estado, motivo_anulacion=p.motivo_anulacion,
+        registrado_por=p.registrador.usuario if p.registrador else None,
     )
 
 

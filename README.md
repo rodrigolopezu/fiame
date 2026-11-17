@@ -5,10 +5,13 @@ Ingeniería Económica.
 
 La aplicación tiene tres partes:
 
+- **Ingreso** (`/login`): una sola entrada para tres roles. El *superadministrador* da de alta y de
+  baja a las tiendas; el *dueño* (administrador) registra a sus vendedores; el *vendedor* opera la
+  tienda. Cada uno llega a su pantalla (`/superadmin`, `/admin`, `/vendedor`).
 - **Vendedor** (`/vendedor`): el menú principal es un círculo con el resumen del día al centro y
   un anillo con cada sección (nueva venta, registrar pago, clientes, estados de cuenta, ventas,
   pagos, panel, catálogo, configuración y actividad). Desde cualquier sección se vuelve al
-  círculo con el botón **Menú** o la tecla **Esc**. Por ahora hay un único vendedor (una tienda).
+  círculo con el botón **Menú** o la tecla **Esc**. Una tienda puede tener varios vendedores, que comparten clientes, ventas y pagos.
 - **Vista simple / detallada**: un interruptor general cambia el nivel de detalle con que se
   presenta la información (lenguaje cotidiano o términos financieros con su explicación). Los
   datos y las operaciones son los mismos en ambas vistas.
@@ -77,6 +80,8 @@ cd backend
 |---|---|
 | Tienda | Bodega Doña Rosa (TEA 24 %, moratoria TEA 36 %, corte 20, pago 26) |
 | Vendedor | usuario `vendedor`, contraseña `fiame2026` |
+| Dueño (administrador de la tienda) | usuario `dueno`, misma contraseña |
+| Superadministrador | usuario `superadmin`, misma contraseña |
 | Catálogo | 12 productos; la licuadora y el parlante importado (en dólares) permiten cuotas |
 | Cliente 1 | Juan Pérez Quispe · TEA 24 % · paga a tiempo salvo una vez · código del portal `J7KQ-M4HP` |
 | Cliente 2 | Ana Torres Ríos · TNA 30 % c. mensual · compra en dólares · estado de cuenta vencido · código `A7NT-X4PL` |

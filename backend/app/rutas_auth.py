@@ -2,13 +2,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app import modelos as m
 from app.bd import sesion
 from app.servicios import sistema
-from app.servicios.seguridad import crear_token, leer_token, verificar_clave
+from app.servicios.seguridad import crear_token, hash_clave, leer_token, verificar_clave
 
 router = APIRouter(prefix='/api/auth', tags=['Autenticación'])
 ROLES = {'SUPERADMIN', 'ADMIN', 'VENDEDOR'}
@@ -16,6 +16,11 @@ ROLES = {'SUPERADMIN', 'ADMIN', 'VENDEDOR'}
 class Login(BaseModel):
     usuario: str
     clave: str
+
+
+class CambioClave(BaseModel):
+    clave_actual: str
+    clave_nueva: str = Field(min_length=12, max_length=128)
 
 @dataclass
 class Identidad:
@@ -34,6 +39,9 @@ def identidad(authorization: str | None = Header(default=None), s: Session = Dep
             raise HTTPException(403, 'Configuración de SUPERADMIN inválida')
     elif usuario.tienda_id is None or usuario.tienda is None:
         raise HTTPException(403, 'Usuario sin tienda válida')
+    elif usuario.tienda.estado != 'ACTIVA':
+        # Los tokens no se guardan: al darse de baja la tienda, su personal queda fuera en la siguiente petición.
+        raise HTTPException(401, 'La tienda fue dada de baja. La sesión se cerró.')
     return Identidad(s, usuario)
 
 
@@ -69,3 +77,15 @@ def iniciar_sesion(datos: Login, s: Session = Depends(sesion)):
 @router.get('/me')
 def sesion_actual(i: Identidad = Depends(identidad)):
     return perfil(i.usuario)
+
+
+@router.put('/clave')
+def cambiar_clave(datos: CambioClave, i: Identidad = Depends(identidad)):
+    if not verificar_clave(datos.clave_actual, i.usuario.password_hash):
+        raise HTTPException(400, 'La contraseña actual no es correcta')
+    if datos.clave_nueva == datos.clave_actual:
+        raise HTTPException(400, 'La contraseña nueva debe ser distinta de la actual')
+    i.usuario.password_hash = hash_clave(datos.clave_nueva)
+    sistema.auditar(i.s, i.usuario, 'CAMBIAR_CLAVE', 'usuario', i.usuario.id)
+    i.s.commit()
+    return {'ok': True}

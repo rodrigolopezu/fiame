@@ -20,6 +20,9 @@ class NuevoVendedor(BaseModel):
 class EstadoVendedor(BaseModel):
     activo: bool
 
+class NuevaClave(BaseModel):
+    clave: str = Field(min_length=12, max_length=128)
+
 def verificar_tienda(i: Identidad) -> int:
     tienda = i.usuario.tienda
     if tienda is None or tienda.estado != "ACTIVA":
@@ -74,3 +77,17 @@ def cambiar_estado(vendedor_id: int, datos: EstadoVendedor, i: SoloAdmin):
             {"activo": vendedor.activo}, tienda_id=tid)
     i.s.commit()
     return vista(vendedor)
+
+
+@router.put("/vendedores/{vendedor_id}/clave")
+def restablecer_clave(vendedor_id: int, datos: NuevaClave, i: SoloAdmin):
+    tid = verificar_tienda(i)
+    vendedor = i.s.scalar(select(m.Usuario).where(
+        m.Usuario.id == vendedor_id, m.Usuario.tienda_id == tid, m.Usuario.rol == "VENDEDOR"))
+    if vendedor is None:
+        raise HTTPException(404, "Vendedor no encontrado en su tienda")
+    vendedor.password_hash = hash_clave(datos.clave)
+    auditar(i.s, i.usuario, "RESTABLECER_CLAVE", "usuario", vendedor.id,
+            {"usuario": vendedor.usuario}, tienda_id=tid)
+    i.s.commit()
+    return {"ok": True}

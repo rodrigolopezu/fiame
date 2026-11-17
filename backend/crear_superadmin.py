@@ -42,7 +42,6 @@ def main():
             s.rollback()
             raise
         print(f'SUPERADMIN creado correctamente (ID {cuenta.id}). No se muestra ni almacena la contraseña en claro.')
-        print('IMPORTANTE: las rutas actuales del vendedor todavía no permiten iniciar sesión como SUPERADMIN.')
 
 
 if __name__ == '__main__':

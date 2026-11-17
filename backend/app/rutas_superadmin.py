@@ -1,4 +1,5 @@
 """Gestión de tiendas y administradores, exclusiva del SUPERADMIN."""
+from datetime import datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -39,6 +40,14 @@ class NuevaTienda(BaseModel):
 class NuevoAdministrador(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     usuario: str = Field(min_length=3, max_length=60, pattern=r"^[a-zA-Z0-9_.-]+$")
+    clave: str = Field(min_length=12, max_length=128)
+
+
+class EstadoTienda(BaseModel):
+    activa: bool
+
+
+class NuevaClave(BaseModel):
     clave: str = Field(min_length=12, max_length=128)
 
 
@@ -133,3 +142,30 @@ def crear_administrador(tienda_id: int, datos: NuevoAdministrador, i: SoloSupera
     except Exception:
         i.s.rollback()
         raise
+
+
+@router.patch("/tiendas/{tienda_id}/estado")
+def cambiar_estado_tienda(tienda_id: int, datos: EstadoTienda, i: SoloSuperadmin):
+    """Da de baja o reactiva una tienda. En la baja, su personal pierde el acceso de inmediato
+    (las sesiones abiertas dejan de servir) y el portal de sus clientes se bloquea; no se borra nada."""
+    tienda = i.s.get(m.Tienda, tienda_id)
+    if tienda is None:
+        raise HTTPException(404, "Tienda no encontrada")
+    tienda.estado = "ACTIVA" if datos.activa else "INACTIVA"
+    tienda.fecha_baja = None if datos.activa else datetime.now()
+    auditar(i.s, i.usuario, "REACTIVAR_TIENDA" if datos.activa else "BAJA_TIENDA", "tienda", tienda.id,
+            {"nombre": tienda.nombre}, tienda_id=tienda.id)
+    i.s.commit()
+    return vista_tienda(tienda)
+
+
+@router.put("/tiendas/{tienda_id}/administradores/{admin_id}/clave")
+def restablecer_clave_administrador(tienda_id: int, admin_id: int, datos: NuevaClave, i: SoloSuperadmin):
+    admin = i.s.scalar(select(m.Usuario).where(m.Usuario.id == admin_id, m.Usuario.tienda_id == tienda_id,
+                                               m.Usuario.rol == "ADMIN"))
+    if admin is None:
+        raise HTTPException(404, "Administrador no encontrado en esa tienda")
+    admin.password_hash = hash_clave(datos.clave)
+    auditar(i.s, i.usuario, "RESTABLECER_CLAVE", "usuario", admin.id, {"usuario": admin.usuario}, tienda_id=tienda_id)
+    i.s.commit()
+    return {"ok": True}

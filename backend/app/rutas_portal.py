@@ -20,10 +20,12 @@ def consultar(datos: Consulta, s: Session = Depends(sesion)):
     cliente = clientes.buscar_por_codigo(s, datos.codigo)
     if cliente is None:
         raise HTTPException(404, "Código no válido. Verifica el código que te entregó la tienda.")
+    tienda = s.get(Tienda, cliente.tienda_id)
+    if tienda.estado != "ACTIVA":
+        raise HTTPException(403, "La consulta no está disponible por ahora. Comunícate con la tienda.")
     hoy = sistema.hoy(s)
     credito.ponerse_al_dia(s, hoy, cliente=cliente)
     detalle = vistas.cliente_detalle(s, cliente, hoy)
-    tienda = s.get(Tienda, cliente.tienda_id)
     # Solo lo que le corresponde ver al cliente: sin score ni datos internos de la tienda.
     return exacto({
         "hoy": hoy,
@@ -38,6 +40,7 @@ def consultar(datos: Consulta, s: Session = Depends(sesion)):
         "estados_vencidos": detalle.estados_vencidos,
         "proximo_vencimiento": detalle.proximo_vencimiento,
         "estados_cuenta": detalle.estados_cuenta,
-        "ventas": detalle.ventas,
-        "pagos": [p for p in detalle.pagos if p.estado == "VALIDO"],
+        # Los usuarios internos de la tienda (quién registró cada cosa) no se muestran al cliente.
+        "ventas": [v.model_copy(update={"registrado_por": None}) for v in detalle.ventas],
+        "pagos": [p.model_copy(update={"registrado_por": None}) for p in detalle.pagos if p.estado == "VALIDO"],
     })

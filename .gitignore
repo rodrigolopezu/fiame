@@ -7,3 +7,5 @@ frontend/dist/
 .claude/
 *.log
 fiame.db
+.venv/
+respaldo_*/
