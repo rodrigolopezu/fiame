@@ -72,7 +72,7 @@ class Usuario(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     usuario: Mapped[str] = mapped_column(String(60), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    rol: Mapped[str] = mapped_column(String(10))
+    rol: Mapped[str] = mapped_column(String(10), nullable=False)
     tienda_id: Mapped[int | None] = mapped_column(ForeignKey("tienda.id"))
     activo: Mapped[bool] = mapped_column(default=True)
     ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime)

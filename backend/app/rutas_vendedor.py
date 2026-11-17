@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import modelos as m
+from app.rutas_auth import identidad, Identidad, permitir_roles
 from app.bd import sesion
 from app.dominio import CERO, ReglaDeNegocio
 from app.finanzas.redondeo import a_porcentaje
@@ -35,31 +36,11 @@ class Contexto:
     hoy: date
 
 
-def contexto(authorization: str | None = Header(default=None), s: Session = Depends(sesion)) -> Contexto:
-    token = (authorization or "").removeprefix("Bearer ").strip()
-    usuario_id = leer_token(token) if token else None
-    usuario = s.get(m.Usuario, usuario_id) if usuario_id else None
-    if usuario is None or not usuario.activo or usuario.rol != "VENDEDOR":
-        raise HTTPException(401, "Sesión no válida o vencida. Vuelva a iniciar sesión.")
+def contexto(i: Identidad = Depends(permitir_roles("VENDEDOR"))) -> Contexto:
+    s, usuario = i.s, i.usuario
     hoy = sistema.hoy(s)
     credito.ponerse_al_dia(s, hoy, tienda_id=usuario.tienda_id)
     return Contexto(s, usuario, usuario.tienda, hoy)
-
-
-class Login(BaseModel):
-    usuario: str
-    clave: str
-
-
-@router.post("/auth/login")
-def iniciar_sesion(datos: Login, s: Session = Depends(sesion)):
-    usuario = s.scalar(select(m.Usuario).where(m.Usuario.usuario == datos.usuario.strip()))
-    if usuario is None or not usuario.activo or not verificar_clave(datos.clave, usuario.password_hash):
-        raise HTTPException(401, "Usuario o contraseña incorrectos")
-    usuario.ultimo_acceso = datetime.now()
-    sistema.auditar(s, usuario, "LOGIN", "usuario", usuario.id)
-    s.commit()
-    return {"token": crear_token(usuario.id), "usuario": usuario.usuario, "tienda": usuario.tienda.nombre}
 
 
 @router.get("/sesion")
