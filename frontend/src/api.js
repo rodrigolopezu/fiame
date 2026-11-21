@@ -80,3 +80,32 @@ export const vendedor = {
 export const portal = {
   consultar: (codigo) => post('/portal', { codigo }),
 }
+
+// Gestión de tiendas exclusiva del SUPERADMIN.
+export const superadmin = {
+  tiendas: () => get('/superadmin/tiendas'),
+  crearTienda: (datos) => post('/superadmin/tiendas', datos),
+  cambiarEstadoTienda: (id, activa) => pedir('PATCH', `/superadmin/tiendas/${id}/estado`, { activa }),
+  restablecerClave: (tiendaId, adminId, clave) => put(`/superadmin/tiendas/${tiendaId}/administradores/${adminId}/clave`, { clave }),
+  administradores: (id) => get(`/superadmin/tiendas/${id}/administradores`),
+  crearAdministrador: (id, datos) => post(`/superadmin/tiendas/${id}/administradores`, datos),
+}
+
+// Administración de vendedores de la tienda autenticada.
+export const admin = {
+  vendedores: () => get('/admin/vendedores'),
+  crearVendedor: (datos) => post('/admin/vendedores', datos),
+  cambiarEstadoVendedor: (id, activo) => pedir('PATCH', `/admin/vendedores/${id}`, { activo }),
+  restablecerClave: (id, clave) => put(`/admin/vendedores/${id}/clave`, { clave }),
+}
+
+// Cuenta propia (cualquier rol)
+export const cuenta = {
+  cambiarClave: (clave_actual, clave_nueva) => put('/auth/clave', { clave_actual, clave_nueva }),
+}
+
+// Consultas de clientes de la tienda del administrador.
+export const adminClientes = {
+  listar: () => get('/admin/clientes'),
+  detalle: (id) => get(`/admin/clientes/${id}`),
+}

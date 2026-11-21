@@ -62,6 +62,16 @@ export function fraseAtraso(dias, recargo, totalHoy, moneda, perspectiva, nombre
   return `${sujeto} ${dias} ${dias === 1 ? 'día' : 'días'}: por el atraso se sumaron ${dinero(recargo, moneda)}, así que ${debe} ${dinero(totalHoy, moneda)}.`
 }
 
+/** Cómo se pagó un estado de cuenta: cuándo y, si hubo atraso, cuánto costó. */
+export function frasePago(pago, moneda, perspectiva, nombre) {
+  const quien = perspectiva === 'cliente' ? 'Pagaste' : `${primerNombre(nombre)} pagó`
+  const cuando = diaYFecha(pago.fecha)
+  if (!pago.dias_mora) return `${quien} el ${cuando}, a tiempo.`
+  const dias = `${pago.dias_mora} ${pago.dias_mora === 1 ? 'día' : 'días'}`
+  const total = perspectiva === 'cliente' ? 'pagaste' : 'pagó'
+  return `${quien} el ${cuando}, ${dias} después de la fecha límite: por el atraso se sumaron ${dinero(pago.recargo_mora, moneda)}, así que en total ${total} ${dinero(pago.total, moneda)}.`
+}
+
 export function fraseDisponible(disponible, moneda, perspectiva) {
   return perspectiva === 'cliente'
     ? `Todavía puedes comprar al fiado hasta ${dinero(disponible, moneda)}.`

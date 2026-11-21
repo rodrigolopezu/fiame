@@ -19,6 +19,8 @@ from app.servicios import clientes, credito
 from app.servicios.seguridad import hash_clave
 
 USUARIO, CLAVE = "vendedor", "fiame2026"
+# Cuentas de desarrollo para probar los roles (misma clave que el vendedor de prueba).
+DUENO, SUPERADMIN = "dueno", "superadmin"
 CODIGOS = {"45781236": "J7KQ-M4HP", "70412589": "A7NT-X4PL"}
 
 PRODUCTOS = [
@@ -57,6 +59,8 @@ def sembrar(s: Session) -> bool:
         bloquear_con_vencido=True))
     vendedor = m.Usuario(usuario=USUARIO, password_hash=hash_clave(CLAVE), rol="VENDEDOR", tienda_id=tienda.id)
     s.add(vendedor)
+    s.add(m.Usuario(usuario=DUENO, password_hash=hash_clave(CLAVE), rol="ADMIN", tienda_id=tienda.id))
+    s.add(m.Usuario(usuario=SUPERADMIN, password_hash=hash_clave(CLAVE), rol="SUPERADMIN", tienda_id=None))
     s.add(m.TipoCambio(fecha=date(2026, 7, 27), compra=D("3.512"), venta=D("3.520"),
                        fuente="Referencial (datos de prueba)"))
 
@@ -121,4 +125,5 @@ if __name__ == "__main__":
         RUTA_BD.unlink()
         print(f"Base de datos eliminada: {RUTA_BD}")
     preparar()
-    print(f"Listo. Vendedor: {USUARIO} / {CLAVE}. Códigos del portal: {', '.join(CODIGOS.values())}")
+    print(f"Listo. Vendedor: {USUARIO}, dueño: {DUENO}, superadmin: {SUPERADMIN} (clave {CLAVE}). "
+          f"Códigos del portal: {', '.join(CODIGOS.values())}")

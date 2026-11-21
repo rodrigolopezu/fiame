@@ -271,9 +271,9 @@ class Simulador:
             detalle.append(e.DetallePagoSalida(
                 estado_cuenta=ec.codigo, fecha_pago_pactada=ec.fecha_pago, exigible=liq.exigible,
                 dias_mora=liq.dias_mora,
-                tasa_compensatoria_mora=a_porcentaje(liq.tasa_compensatoria_mora),
+                tea_compensatoria=a_porcentaje(ec.tasa_compensatoria.tea()),
                 interes_compensatorio_mora=liq.interes_compensatorio_mora,
-                tasa_moratoria=a_porcentaje(liq.tasa_moratoria), interes_moratorio=liq.interes_moratorio,
+                tea_moratoria=a_porcentaje(ec.tasa_moratoria.tea()), interes_moratorio=liq.interes_moratorio,
                 recargo_mora=liq.total - liq.exigible,
                 mora=liq.mora, interes=liq.interes, capital=liq.capital, total=liq.total, libera_linea=libera,
             ))
@@ -333,8 +333,7 @@ class Simulador:
     # -- Resultado
 
     def resumen_tasa(self, tasa: Tasa) -> e.ResumenTasa:
-        return e.ResumenTasa(descripcion=tasa.descripcion(), tea=a_porcentaje(tasa.tea()),
-                             tem=a_porcentaje(tasa.tem()))
+        return e.ResumenTasa(descripcion=tasa.descripcion(), tea=a_porcentaje(tasa.tea()))
 
     def salida_ec(self, ec: EstadoCuenta) -> e.EstadoCuentaSalida:
         estado, deuda = ec.estado, None
@@ -344,9 +343,7 @@ class Simulador:
                            ec.fecha_pago, self.fecha_hasta)
             deuda = e.DeudaAlDia(
                 fecha=self.fecha_hasta, dias_mora=liq.dias_mora,
-                tasa_compensatoria=a_porcentaje(liq.tasa_compensatoria_mora),
-                interes_compensatorio=liq.interes_compensatorio_mora,
-                tasa_moratoria=a_porcentaje(liq.tasa_moratoria), interes_moratorio=liq.interes_moratorio,
+                interes_compensatorio=liq.interes_compensatorio_mora, interes_moratorio=liq.interes_moratorio,
                 recargo=liq.total - liq.exigible, total_a_pagar=liq.total,
             )
         return e.EstadoCuentaSalida(
@@ -361,7 +358,6 @@ class Simulador:
                     tipo=l.tipo, venta=l.venta.numero, fecha=l.venta.fecha, descripcion=l.venta.descripcion(),
                     cuota=f"{l.cuota.numero}/{l.venta.numero_cuotas}" if l.cuota else None,
                     capital=l.capital, dias=None if l.cuota else l.venta.dias,
-                    tasa=a_porcentaje(l.venta.tem if l.cuota else l.venta.tasa_periodo),
                     interes=l.interes, total=l.total,
                 )
                 for l in ec.lineas
@@ -377,8 +373,9 @@ class Simulador:
             numero_cuotas=v.numero_cuotas, moneda=v.moneda, tipo_cambio=v.tipo_cambio, items=v.items,
             capital=v.capital, tasa_compensatoria=v.tasa_compensatoria.descripcion(),
             tasa_moratoria=v.tasa_moratoria.descripcion(), fecha_corte=v.fecha_corte,
-            fecha_pago=v.fecha_pago, dias=v.dias, tasa_periodo=a_porcentaje(v.tasa_periodo),
-            interes=v.interes, total=v.total, tem=a_porcentaje(v.tem) if v.tem is not None else None,
+            fecha_pago=v.fecha_pago, dias=v.dias,
+            tea_compensatoria=a_porcentaje(v.tasa_compensatoria.tea()),
+            tea_moratoria=a_porcentaje(v.tasa_moratoria.tea()), interes=v.interes, total=v.total,
             estado=v.estado, estado_cuenta=v.estado_cuenta.codigo if v.estado_cuenta else None,
             cuotas=[
                 e.CuotaSalida(

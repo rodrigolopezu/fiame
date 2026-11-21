@@ -1,11 +1,13 @@
 <script setup>
 // Marco de la interfaz del vendedor: barra superior con la fecha del sistema y la sesión.
 // El menú principal es el círculo de /vendedor; desde cualquier sección se vuelve a él.
+import { KeyRound } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { vendedor } from '../../api'
 import Ayuda from '../../components/Ayuda.vue'
 import InterruptorVista from '../../components/InterruptorVista.vue'
+import CambiarClave from '../../components/CambiarClave.vue'
 import Logo from '../../components/Logo.vue'
 import { fecha } from '../../formato'
 import { cerrar, sesion } from '../../sesion'
@@ -14,6 +16,7 @@ const router = useRouter()
 const ruta = useRoute()
 const info = ref(null)
 const cambiando = ref(false)
+const cambiandoClave = ref(false)
 const nuevaFecha = ref('')
 const error = ref('')
 
@@ -86,6 +89,7 @@ function salir() {
       <div class="fila">
         <InterruptorVista />
         <span class="suave chico">{{ sesion.usuario }}</span>
+        <button class="chico clave" title="Cambiar contraseña" aria-label="Cambiar contraseña" @click="cambiandoClave = true"><KeyRound :size="15" /></button>
         <button class="chico" @click="salir">Cerrar sesión</button>
       </div>
     </header>
@@ -97,6 +101,7 @@ function salir() {
       <span v-if="error" class="error chico">{{ error }}</span>
     </div>
 
+    <CambiarClave v-model="cambiandoClave" />
     <main class="contenido" :class="{ 'en-menu': enMenu }">
       <RouterView />
     </main>
@@ -125,6 +130,7 @@ function salir() {
 .adelantar { display: flex; gap: 8px; align-items: center; padding: 10px 20px; background: var(--alerta-suave); flex-wrap: wrap; }
 .adelantar input { width: auto; }
 .error { color: var(--error); }
+.clave { display: inline-flex; padding: 6px 8px; }
 .contenido { padding: 20px; max-width: 1400px; width: 100%; margin: 0 auto; flex: 1; }
 .contenido.en-menu { display: flex; justify-content: center; }
 .pie { display: flex; gap: 16px; justify-content: center; padding: 0 0 20px; }

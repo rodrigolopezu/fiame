@@ -7,12 +7,26 @@ Documento vivo con las decisiones funcionales del sistema. Las reglas de cálcul
 
 | Rol | Acceso | Qué puede hacer |
 |---|---|---|
-| Administrador del sistema | Usuario y clave | Dar de alta y de baja a tiendas (tenants) y crear sus credenciales. **No ve** clientes, ventas ni pagos de ninguna tienda. |
-| Vendedor (tienda) | Usuario y clave | Gestiona su catálogo, sus clientes, ventas a crédito, cobros y estados de cuenta. Una tienda = un vendedor. |
-| Cliente | Enlace único con clave (sin cuenta) | Solo consulta su estado de cuenta, cuotas y fechas de pago. No paga por la plataforma. |
+| Superadministrador (de FiaMe) | Usuario y clave | Da de alta y de baja a las tiendas y crea a su primer administrador; agrega administradores y restablece sus claves. **No ve** clientes, ventas ni pagos de ninguna tienda. |
+| Administrador (dueño de la tienda) | Usuario y clave | Registra a los vendedores de su tienda, los activa o desactiva y restablece sus claves; consulta la lista de clientes. **No vende ni cobra** con esta cuenta: para eso se registra también como vendedor. |
+| Vendedor | Usuario y clave | Gestiona catálogo, clientes, ventas a crédito, cobros y estados de cuenta de su tienda. |
+| Cliente | Código del portal (sin cuenta) | Solo consulta su estado de cuenta, cuotas y constancias. No paga por la plataforma. |
+
+- **Una tienda puede tener varios vendedores.** Todos ven y operan los mismos clientes, ventas y
+  pagos de la tienda; cada venta y cada pago queda a nombre de quien lo registró y se muestra en
+  las listas y en la sección Actividad. El cliente no ve ese dato en su portal.
+- **Una sola puerta de entrada:** todos los roles ingresan por `/login` y el sistema los lleva a
+  su pantalla. Cada pantalla y cada endpoint verifican el rol; las tiendas están aisladas entre sí.
+- **Contraseñas:** mínimo 12 caracteres. Cada usuario puede cambiar la suya; el administrador
+  restablece la de un vendedor y el superadministrador la de un administrador.
+- **Baja de una tienda:** su personal pierde el acceso de inmediato (las sesiones abiertas dejan
+  de servir en la siguiente petición), el portal de sus clientes se bloquea y no se borra ningún
+  dato. Se puede reactivar.
+- **Registro controlado:** las tiendas no se registran solas; las crea el superadministrador. Los
+  vendedores los crea el administrador de cada tienda.
 
 > Pendiente de validar con el profesor: el enunciado (punto 1) menciona acceso del cliente
-> con usuario y clave; se propone reemplazarlo por un enlace único.
+> con usuario y clave; se propone reemplazarlo por un código.
 
 ## Configuración de la tienda (valores predeterminados)
 
@@ -150,8 +164,7 @@ Cambiar los valores por defecto no afecta a clientes ya registrados.
   términos financieros. Por ejemplo: "Ana tenía que pagar S/ 30.72 hasta el sábado 05/09" y
   "Se atrasó 25 días: por el atraso se sumaron S/ 1.42, así que hoy debe S/ 32.14". Las
   frases se redactan según quién lee: el vendedor ("Juan debe…") o el cliente ("Debes…").
-- **Detallada**: todas las cifras y términos (capital, TEA, TEM, tasa del plazo,
-  amortización, intereses compensatorio y moratorio, línea liberada), cada término con un
+- **Detallada**: todas las cifras y términos (capital, TEA, amortización, intereses compensatorio y moratorio, línea liberada), cada término con un
   ícono **?** que explica su significado en una frase.
 - El simulador se muestra siempre en vista detallada, porque es una herramienta de
   verificación.

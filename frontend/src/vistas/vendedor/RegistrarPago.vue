@@ -6,8 +6,9 @@ import { useRoute } from 'vue-router'
 import { vendedor } from '../../api'
 import Ayuda from '../../components/Ayuda.vue'
 import PagoDetalle from '../../components/PagoDetalle.vue'
+import Potencia from '../../components/Potencia.vue'
 import Termino from '../../components/Termino.vue'
-import { dinero, fecha, MEDIOS, tasa } from '../../formato'
+import { dinero, fecha, MEDIOS } from '../../formato'
 import { diaYFecha, mes, primerNombre } from '../../lenguaje'
 import { vista } from '../../vista'
 
@@ -117,8 +118,8 @@ async function registrar() {
               <td>{{ d.estado_cuenta }} <span class="suave chico">vence {{ fecha(d.fecha_pago_pactada) }}</span></td>
               <td class="num">{{ dinero(d.exigible, cliente?.moneda) }}</td>
               <td class="num"><span :class="{ 'etiqueta error': d.dias_mora }">{{ d.dias_mora }}</span></td>
-              <td class="num">{{ dinero(d.interes_compensatorio_mora, cliente?.moneda) }}<div v-if="d.dias_mora" class="chico suave">{{ tasa(d.tasa_compensatoria_mora) }}</div></td>
-              <td class="num">{{ dinero(d.interes_moratorio, cliente?.moneda) }}<div v-if="d.dias_mora" class="chico suave">{{ tasa(d.tasa_moratoria) }}</div></td>
+              <td class="num">{{ dinero(d.interes_compensatorio_mora, cliente?.moneda) }}<div v-if="d.dias_mora" class="chico suave">× [<Potencia :tea="d.tea_compensatoria" :dias="d.dias_mora" menos-uno />]</div></td>
+              <td class="num">{{ dinero(d.interes_moratorio, cliente?.moneda) }}<div v-if="d.dias_mora" class="chico suave">× [<Potencia :tea="d.tea_moratoria" :dias="d.dias_mora" menos-uno />]</div></td>
               <td class="num"><strong>{{ dinero(d.total, cliente?.moneda) }}</strong></td>
             </tr>
           </tbody>

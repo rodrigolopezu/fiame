@@ -30,6 +30,7 @@ Estas reglas no se discuten ni se reinterpretan al implementar. Vienen del enunc
 | R17 | En mora se cobran **a la vez** el interés compensatorio y el moratorio por los días de atraso, ambos sobre el monto exigible. | L |
 | R18 | En el cronograma francés, la cuota de cada periodo se calcula sobre el **saldo inicial del periodo** (Fórmula 67 del libro). | L |
 | R19 | Si una tasa nominal no indica capitalización, se asume **capitalización diaria**. | L |
+| R20 | En pantalla, reportes y calculadoras **solo se muestra la TEA**, y el interés de cualquier plazo se presenta como `(1 + TEA)^(días/360)`. Nunca se muestra una tasa efectiva de N días (TE11, TEM, TED…): confunde y está prohibido por el profesor. | P |
 
 ### Sobre R12
 Correcto: la tasa del plazo se obtiene directamente, en un solo paso.

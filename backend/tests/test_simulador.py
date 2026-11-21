@@ -1,4 +1,6 @@
 """Casos de prueba de docs/casos-de-prueba.md y reglas de negocio, a través de la API."""
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -60,12 +62,12 @@ def caso_1():
 
 def test_caso_1_tasas(caso_1):
     assert caso_1["tasa_compensatoria"]["tea"] == "24.0000000"
-    assert caso_1["tasa_compensatoria"]["tem"] == "1.8087582"
+    assert caso_1["tasa_moratoria"]["tea"] == "36.0000000"
 
 
 def test_caso_1_cronograma_licuadora(caso_1):
     licuadora = caso_1["ventas"][1]
-    assert (licuadora["dias"], licuadora["tasa_periodo"], licuadora["total"]) == (11, "0.6594496", "166.09")
+    assert (licuadora["dias"], licuadora["tea_compensatoria"], licuadora["total"]) == (11, "24.0000000", "166.09")
     filas = [(c["fecha_vencimiento"], c["saldo_inicial"], c["interes"], c["cuota"], c["amortizacion"],
               c["saldo_final"], c["libera_linea"]) for c in licuadora["cuotas"]]
     assert filas == [
@@ -79,10 +81,10 @@ def test_caso_1_estado_septiembre_y_pago_con_mora(caso_1):
     septiembre = ec(caso_1, "EC-2026-09")
     assert (septiembre["fecha_pago"], septiembre["total_a_pagar"]) == ("2026-09-26", "22.21")
     linea = septiembre["lineas"][0]
-    assert (linea["dias"], linea["tasa"], linea["interes"]) == (16, "0.9606353", "0.21")
+    assert (linea["dias"], linea["interes"]) == (16, "0.21")
     p = caso_1["pagos"][0]["detalle"][0]
-    assert (p["dias_mora"], p["tasa_compensatoria_mora"], p["interes_compensatorio_mora"]) == (4, "0.2392985", "0.05")
-    assert (p["tasa_moratoria"], p["interes_moratorio"], p["total"]) == ("0.3422340", "0.08", "22.34")
+    assert (p["dias_mora"], p["tea_compensatoria"], p["interes_compensatorio_mora"]) == (4, "24.0000000", "0.05")
+    assert (p["tea_moratoria"], p["interes_moratorio"], p["total"]) == ("36.0000000", "0.08", "22.34")
     assert (p["mora"], p["interes"], p["capital"]) == ("0.08", "0.26", "22.00")
 
 
@@ -95,10 +97,10 @@ def test_caso_1_rechazos(caso_1):
 
 def test_caso_1_estado_octubre_y_pago_anticipado(caso_1):
     octubre = ec(caso_1, "EC-2026-10")
-    assert [(l["descripcion"], l["dias"], l["tasa"], l["total"]) for l in octubre["lineas"]] == [
-        ("Licuadora", None, "1.8087582", "57.38"),
-        ("Arroz 5 kg", 34, "2.0523851", "22.45"),
-        ("Aceite 1 L", 8, "0.4791697", "9.55"),
+    assert [(l["descripcion"], l["dias"], l["total"]) for l in octubre["lineas"]] == [
+        ("Licuadora", None, "57.38"),
+        ("Arroz 5 kg", 34, "22.45"),
+        ("Aceite 1 L", 8, "9.55"),
     ]
     assert (octubre["total_capital"], octubre["total_interes"], octubre["total_a_pagar"]) == ("85.88", "3.50", "89.38")
     p = caso_1["pagos"][1]
@@ -139,14 +141,13 @@ def caso_2():
 
 def test_caso_2_tasas_nominales(caso_2):
     assert caso_2["tasa_compensatoria"]["tea"] == "34.4888824"
-    assert caso_2["tasa_compensatoria"]["tem"] == "2.5000000"
     assert caso_2["tasa_moratoria"]["tea"] == "43.3071610"
 
 
 def test_caso_2_kit_en_dolares(caso_2):
     kit = caso_2["ventas"][0]
-    assert (kit["capital"], kit["fecha_pago"], kit["dias"], kit["tasa_periodo"], kit["total"]) == (
-        "175.65", "2026-11-05", 40, "3.3471459", "181.53")
+    assert (kit["capital"], kit["fecha_pago"], kit["dias"], kit["tea_compensatoria"], kit["total"]) == (
+        "175.65", "2026-11-05", 40, "34.4888824", "181.53")
     assert [(c["fecha_vencimiento"], c["interes"], c["cuota"], c["saldo_final"]) for c in kit["cuotas"]] == [
         ("2026-12-05", "4.54", "48.25", "137.82"),
         ("2027-01-05", "3.45", "48.26", "93.01"),
@@ -158,9 +159,9 @@ def test_caso_2_kit_en_dolares(caso_2):
 def test_caso_2_estado_octubre_incluye_compra_del_dia_de_corte(caso_2):
     octubre = ec(caso_2, "EC-2026-10")
     assert octubre["fecha_pago"] == "2026-11-05"
-    assert [(l["descripcion"], l["dias"], l["tasa"], l["total"]) for l in octubre["lineas"]] == [
-        ("Limpieza facial", 33, "2.7534120", "82.20"),
-        ("Labial", 11, "0.9095069", "35.32"),
+    assert [(l["descripcion"], l["dias"], l["total"]) for l in octubre["lineas"]] == [
+        ("Limpieza facial", 33, "82.20"),
+        ("Labial", 11, "35.32"),
     ]
     assert octubre["total_a_pagar"] == "117.52"
     assert caso_2["pagos"][0]["total"] == "117.52"
@@ -169,8 +170,8 @@ def test_caso_2_estado_octubre_incluye_compra_del_dia_de_corte(caso_2):
 def test_caso_2_cuota_pagada_con_mora(caso_2):
     assert ec(caso_2, "EC-2026-11")["total_a_pagar"] == "48.25"
     p = caso_2["pagos"][1]["detalle"][0]
-    assert (p["dias_mora"], p["tasa_compensatoria_mora"], p["interes_compensatorio_mora"]) == (10, "0.8264838", "0.40")
-    assert (p["tasa_moratoria"], p["interes_moratorio"], p["total"]) == ("1.0045120", "0.48", "49.13")
+    assert (p["dias_mora"], p["tea_compensatoria"], p["interes_compensatorio_mora"]) == (10, "34.4888824", "0.40")
+    assert (p["tea_moratoria"], p["interes_moratorio"], p["total"]) == ("43.3071610", "0.48", "49.13")
     assert (p["mora"], p["interes"], p["capital"]) == ("0.48", "4.94", "43.71")
     assert p["recargo_mora"] == "0.88"  # 0.40 compensatorio + 0.48 moratorio
     assert caso_2["linea"]["disponible"] == "668.06"
@@ -259,8 +260,44 @@ def test_rechazos(evento, mensaje):
 
 
 def test_tasa_nominal_sin_capitalizacion_asume_diaria():
-    r = cliente.post("/api/calculadora/tasa", json={"tasa": tasa("NOMINAL", "4", "SEMESTRAL"), "dias": 30})
-    assert r.json()["tasa_efectiva"] == "0.6688193"  # libro, ej. 4-11
+    r = cliente.post("/api/calculadora/tasa", json={"tasa": tasa("NOMINAL", "4", "SEMESTRAL")})
+    assert r.json()["tea"] == "8.3277440"  # TNS 4 % capitalizable diariamente, a un año de 360 días
+
+
+# Regla del profesor: solo se muestra la TEA, elevada a días/360. Ninguna respuesta de la
+# API debe traer una tasa efectiva de N días (tasa del plazo, TEM, TED...).
+TASAS_POR_DIAS = {"tasa_periodo", "tem", "ted", "tasa_efectiva", "tasa_gracia"}
+
+
+def _claves(valor):
+    if isinstance(valor, dict):
+        for k, v in valor.items():
+            yield k
+            yield from _claves(v)
+    elif isinstance(valor, list):
+        for v in valor:
+            yield from _claves(v)
+
+
+def test_ninguna_respuesta_muestra_tasas_efectivas_por_dias(caso_1, caso_2):
+    respuestas = [caso_1, caso_2]
+    respuestas.append(cliente.post("/api/calculadora/tasa", json={"tasa": tasa("EFECTIVA", "12")}).json())
+    respuestas.append(cliente.post("/api/calculadora/cronograma", json={
+        "capital": "112000", "tasa": tasa("EFECTIVA", "10"), "numero_cuotas": 9, "dias_periodo": 120}).json())
+    respuestas.append(cliente.post("/api/calculadora/interes", json={
+        "capital": "3000", "tasa": tasa("EFECTIVA", "10"), "dias": 40}).json())
+    for r in respuestas:
+        assert not TASAS_POR_DIAS & set(_claves(r))
+
+
+def test_el_interes_es_capital_por_tea_elevada_a_dias_sobre_360(caso_1):
+    """Interés de una compra a fin de mes = C · [(1 + TEA)^(días/360) − 1], con un centavo de tolerancia."""
+    compras = [v for v in caso_1["ventas"] if v["modalidad"] == "FIN_DE_MES"]
+    assert compras
+    for v in compras:
+        tea = Decimal(v["tea_compensatoria"]) / 100
+        esperado = Decimal(v["capital"]) * ((1 + tea) ** (Decimal(v["dias"]) / 360) - 1)
+        assert abs(Decimal(v["interes"]) - esperado) <= Decimal("0.01")
 
 
 def test_capitalizacion_mayor_que_el_periodo_es_invalida():

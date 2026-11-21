@@ -37,12 +37,27 @@ class ScoreVista(BaseModel):
 class VentaVista(e.VentaSalida):
     cliente_id: int
     cliente: str
+    registrado_por: str | None = None
+
+
+class PagoDeEstado(BaseModel):
+    """Cómo se pagó un estado de cuenta: cuándo, con cuántos días de atraso y qué mora se cobró."""
+    numero: int
+    fecha: date
+    medio: str
+    dias_mora: int
+    exigible: Decimal
+    interes_compensatorio_mora: Decimal
+    interes_moratorio: Decimal
+    recargo_mora: Decimal
+    total: Decimal
 
 
 class EstadoCuentaVista(e.EstadoCuentaSalida):
     id: int
     cliente_id: int
     cliente: str
+    pago: PagoDeEstado | None = None
 
 
 class PagoVista(e.PagoSalida):
@@ -51,6 +66,7 @@ class PagoVista(e.PagoSalida):
     moneda: str
     estado: str
     motivo_anulacion: str | None
+    registrado_por: str | None = None
 
 
 class ClienteResumen(BaseModel):
@@ -109,8 +125,9 @@ def venta_vista(v: m.Venta, cliente: m.Cliente) -> VentaVista:
                for d in v.detalle],
         capital=v.capital, tasa_compensatoria=v.tasa_compensatoria.a_dominio().descripcion(),
         tasa_moratoria=v.tasa_moratoria.a_dominio().descripcion(), fecha_corte=v.fecha_corte,
-        fecha_pago=v.fecha_pago, dias=v.dias, tasa_periodo=a_porcentaje(v.tasa_periodo), interes=v.interes,
-        total=v.total, tem=a_porcentaje(v.tem) if v.tem is not None else None, estado=v.estado,
+        fecha_pago=v.fecha_pago, dias=v.dias, tea_compensatoria=a_porcentaje(v.tasa_compensatoria.tea),
+        tea_moratoria=a_porcentaje(v.tasa_moratoria.tea), interes=v.interes,
+        total=v.total, estado=v.estado,
         estado_cuenta=codigo(v.fecha_corte) if v.modalidad == "FIN_DE_MES" and v.id else None,
         cuotas=[
             e.CuotaSalida(numero=c.numero, fecha_corte=c.fecha_corte, fecha_vencimiento=c.fecha_vencimiento,
@@ -120,6 +137,7 @@ def venta_vista(v: m.Venta, cliente: m.Cliente) -> VentaVista:
             for c in v.cuotas
         ],
         cliente_id=cliente.id, cliente=cliente.nombre_completo,
+        registrado_por=v.registrador.usuario if v.registrador else None,
     )
 
 
@@ -138,8 +156,8 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
         liq = liquidar(ec.total_capital, ec.total_interes, ec.tasa_compensatoria.a_dominio(),
                        ec.tasa_moratoria.a_dominio(), ec.fecha_pago, hoy)
         deuda = e.DeudaAlDia(
-            fecha=hoy, dias_mora=liq.dias_mora, tasa_compensatoria=a_porcentaje(liq.tasa_compensatoria_mora),
-            interes_compensatorio=liq.interes_compensatorio_mora, tasa_moratoria=a_porcentaje(liq.tasa_moratoria),
+            fecha=hoy, dias_mora=liq.dias_mora,
+            interes_compensatorio=liq.interes_compensatorio_mora,
             interes_moratorio=liq.interes_moratorio, recargo=liq.total - liq.exigible, total_a_pagar=liq.total)
 
     # Informativo: estados anteriores que al momento del corte seguían vencidos.
@@ -155,6 +173,13 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
 
     pago = _pago_de(s, ec)
     comp, mor = ec.tasa_compensatoria, ec.tasa_moratoria
+    pago_del_estado = None
+    if pago is not None:
+        d = next(d for d in pago.detalle if d.estado_cuenta_id == ec.id)
+        pago_del_estado = PagoDeEstado(
+            numero=pago.id, fecha=pago.fecha_pago, medio=pago.medio, dias_mora=d.dias_mora, exigible=d.exigible,
+            interes_compensatorio_mora=d.interes_compensatorio_mora, interes_moratorio=d.interes_moratorio,
+            recargo_mora=d.total - d.exigible, total=d.total)
     return EstadoCuentaVista(
         id=ec.id, cliente_id=cliente.id, cliente=cliente.nombre_completo, codigo=ec.codigo,
         periodo_desde=ec.periodo_desde, fecha_corte=ec.fecha_corte, fecha_pago=ec.fecha_pago, moneda=ec.moneda,
@@ -165,13 +190,13 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
                 tipo=l.tipo, venta=l.venta.id, fecha=l.venta.fecha, descripcion=l.venta.descripcion,
                 cuota=f"{l.cuota.numero}/{l.venta.numero_cuotas}" if l.cuota else None, capital=l.capital,
                 dias=None if l.cuota else l.venta.dias,
-                tasa=a_porcentaje(l.venta.tem if l.cuota else l.venta.tasa_periodo),
                 interes=l.interes, total=l.total)
             for l in credito.lineas_del_corte(cliente, ec.fecha_corte)
         ],
         total_capital=ec.total_capital, total_interes=ec.total_interes, total_a_pagar=ec.total_a_pagar,
         linea=e.LineaCredito(limite=ec.limite_credito, usado=ec.credito_usado, disponible=ec.credito_disponible),
         vencidos_anteriores=anteriores, estado=estado, pagado_con=pago.id if pago else None, deuda_al_dia=deuda,
+        pago=pago_del_estado,
     )
 
 
@@ -183,9 +208,9 @@ def pago_vista(p: m.Pago) -> PagoVista:
             e.DetallePagoSalida(
                 estado_cuenta=d.estado_cuenta.codigo, fecha_pago_pactada=d.estado_cuenta.fecha_pago,
                 exigible=d.exigible, dias_mora=d.dias_mora,
-                tasa_compensatoria_mora=a_porcentaje(d.tasa_compensatoria_mora),
+                tea_compensatoria=a_porcentaje(d.estado_cuenta.tasa_compensatoria.tea),
                 interes_compensatorio_mora=d.interes_compensatorio_mora,
-                tasa_moratoria=a_porcentaje(d.tasa_moratoria), interes_moratorio=d.interes_moratorio,
+                tea_moratoria=a_porcentaje(d.estado_cuenta.tasa_moratoria.tea), interes_moratorio=d.interes_moratorio,
                 recargo_mora=d.total - d.exigible, mora=d.interes_moratorio, interes=d.interes, capital=d.capital, total=d.total,
                 libera_linea=sum((l.libera_linea for l in credito.lineas_del_corte(cliente, d.estado_cuenta.fecha_corte)), CERO),
             )
@@ -195,6 +220,7 @@ def pago_vista(p: m.Pago) -> PagoVista:
         linea_liberada=p.linea_liberada, cliente_id=cliente.id, cliente=cliente.nombre_completo,
         moneda=cliente.moneda,
         estado=p.estado, motivo_anulacion=p.motivo_anulacion,
+        registrado_por=p.registrador.usuario if p.registrador else None,
     )
 
 

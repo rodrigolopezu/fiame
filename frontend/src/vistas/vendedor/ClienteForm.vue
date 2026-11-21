@@ -56,7 +56,7 @@ watch(() => datos.value && [datos.value.tasa_compensatoria, datos.value.tasa_mor
   temporizador = setTimeout(async () => {
     for (const clave of ['compensatoria', 'moratoria']) {
       try {
-        const r = await api.tasa({ tasa: datos.value[`tasa_${clave}`], dias: 360 })
+        const r = await api.tasa({ tasa: datos.value[`tasa_${clave}`] })
         teas.value[clave] = r.tea
       } catch { teas.value[clave] = null }
     }

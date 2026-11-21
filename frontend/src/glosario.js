@@ -1,8 +1,6 @@
 // Definiciones cortas de los términos financieros que aparecen en la vista detallada.
 export const GLOSARIO = {
-  tea: 'Tasa Efectiva Anual: cuánto crece la deuda en un año, ya incluida la capitalización. Es la tasa que se informa al cliente.',
-  tem: 'Tasa Efectiva Mensual: la TEA llevada a un mes de 30 días. Con ella se calcula el interés de cada cuota.',
-  tasaPlazo: 'Tasa efectiva para los días exactos que pasan entre la compra y la fecha de pago.',
+  tea: 'Tasa Efectiva Anual: cuánto crece la deuda en un año, ya incluida la capitalización. Es la tasa que se informa al cliente y la única que se usa: para cualquier plazo, el interés sale de elevar (1 + TEA) a los días sobre 360.',
   nominal: 'Tasa que se reparte en partes iguales entre los periodos de capitalización. Su costo real es su equivalente efectiva.',
   capitalizacion: 'Cada cuánto el interés se suma a la deuda y empieza, a su vez, a generar interés.',
   capital: 'Lo que cuestan los productos al crédito (precio de lista), sin intereses.',

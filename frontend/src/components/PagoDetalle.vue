@@ -1,7 +1,8 @@
 <script setup>
-import { dinero, fecha, MEDIOS, tasa } from '../formato'
+import { dinero, fecha, MEDIOS } from '../formato'
 import { diaYFecha, mes } from '../lenguaje'
 import { usarSimple } from '../vista'
+import Potencia from './Potencia.vue'
 import Termino from './Termino.vue'
 
 const props = defineProps({
@@ -18,7 +19,7 @@ const medio = (m) => Object.fromEntries(MEDIOS)[m] || m
   <article v-if="simple" class="panel" :class="{ anulado: pago.estado === 'ANULADO' }">
     <div class="entre">
       <div>
-        <p class="suave chico">Pago {{ pago.numero }} · {{ diaYFecha(pago.fecha) }} · {{ medio(pago.medio) }}<span v-if="pago.cliente"> · {{ pago.cliente }}</span></p>
+        <p class="suave chico">Pago {{ pago.numero }} · {{ diaYFecha(pago.fecha) }} · {{ medio(pago.medio) }}<span v-if="pago.cliente"> · {{ pago.cliente }}</span><span v-if="pago.registrado_por"> · registrado por {{ pago.registrado_por }}</span></p>
         <h3 class="frase">Se pagó {{ dinero(pago.total, moneda) }}</h3>
       </div>
       <span class="fila">
@@ -42,7 +43,7 @@ const medio = (m) => Object.fromEntries(MEDIOS)[m] || m
   <!-- Vista detallada: desglose completo -->
   <article v-else class="panel" :class="{ anulado: pago.estado === 'ANULADO' }">
     <div class="entre">
-      <h3>Pago {{ pago.numero }} · {{ fecha(pago.fecha) }}<span v-if="pago.cliente" class="suave"> · {{ pago.cliente }}</span></h3>
+      <h3>Pago {{ pago.numero }} · {{ fecha(pago.fecha) }}<span v-if="pago.cliente" class="suave"> · {{ pago.cliente }}</span><span v-if="pago.registrado_por" class="suave chico"> · registrado por {{ pago.registrado_por }}</span></h3>
       <span class="fila">
         <slot name="acciones" />
         <span v-if="pago.estado === 'ANULADO'" class="etiqueta error">anulado</span>
@@ -65,8 +66,8 @@ const medio = (m) => Object.fromEntries(MEDIOS)[m] || m
             <td>{{ d.estado_cuenta }} <span class="suave chico">vencía {{ fecha(d.fecha_pago_pactada) }}</span></td>
             <td class="num">{{ dinero(d.exigible, moneda) }}</td>
             <td class="num">{{ d.dias_mora }}</td>
-            <td class="num">{{ dinero(d.interes_compensatorio_mora, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">{{ tasa(d.tasa_compensatoria_mora) }}</span></td>
-            <td class="num">{{ dinero(d.interes_moratorio, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">{{ tasa(d.tasa_moratoria) }}</span></td>
+            <td class="num">{{ dinero(d.interes_compensatorio_mora, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">× [<Potencia :tea="d.tea_compensatoria" :dias="d.dias_mora" menos-uno />]</span></td>
+            <td class="num">{{ dinero(d.interes_moratorio, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">× [<Potencia :tea="d.tea_moratoria" :dias="d.dias_mora" menos-uno />]</span></td>
             <td class="num">{{ dinero(d.mora, moneda) }}</td>
             <td class="num">{{ dinero(d.interes, moneda) }}</td>
             <td class="num">{{ dinero(d.capital, moneda) }}</td>

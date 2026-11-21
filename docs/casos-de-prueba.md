@@ -30,7 +30,7 @@ y liberación de la línea con tope en el precio de lista.
 
 ### Tasas
 
-- `TEM = (1 + 0.24)^(30/360) − 1 = 1.8087582 %`
+- `i = (1 + 0.24)^(30/360) − 1` (solo para la cuota; no se muestra como tasa)
 
 ### Cronología
 
@@ -52,7 +52,7 @@ y liberación de la línea con tope en el precio de lista.
 ### Licuadora: gracia y cronograma
 
 - Gracia total: 15/09 → 26/09 = **11 días**
-- `TE11 = 1.24^(11/360) − 1 = 0.6594496 %`
+- `1.24^(11/360) − 1`
 - `Capital capitalizado = r2(165.00 × 1.006594496) = 166.09`
 
 | Cuota | Vence | Saldo inicial | Interés | Cuota | Amortización | Saldo final |
@@ -68,7 +68,7 @@ Cuota 3: `56.36 + 1.02 = 57.38`.
 
 | Fecha | Concepto | Capital | Días | Tasa | Interés | Total |
 |---|---|---|---|---|---|---|
-| 10/09 | Arroz 5 kg | 22.00 | 16 | TE16 = 0.9606353 % | 0.21 | 22.21 |
+| 10/09 | Arroz 5 kg | 22.00 | 16 | (1 + TEA)^(16/360) − 1 | 0.21 | 22.21 |
 | | **Total a pagar** | **22.00** | | | **0.21** | **22.21** |
 
 **Pago del 30/09 (4 días de mora)**
@@ -76,8 +76,8 @@ Cuota 3: `56.36 + 1.02 = 57.38`.
 | Concepto | Tasa | Monto |
 |---|---|---|
 | Exigible EC set-2026 | | 22.21 |
-| Interés compensatorio por mora | TE4 = 1.24^(4/360) − 1 = 0.2392985 % | 0.05 |
-| Interés moratorio | TE4 = 1.36^(4/360) − 1 = 0.3422340 % | 0.08 |
+| Interés compensatorio por mora | 1.24^(4/360) − 1 | 0.05 |
+| Interés moratorio | 1.36^(4/360) − 1 | 0.08 |
 | **Total pagado** | | **22.34** |
 
 Desglose (mora → interés → capital): mora **0.08**, interés **0.26** (0.21 + 0.05), capital **22.00**.
@@ -87,9 +87,9 @@ Libera S/ 22.00 de la línea.
 
 | Fecha | Concepto | Capital | Días | Tasa | Interés | Total |
 |---|---|---|---|---|---|---|
-| 22/09 | Arroz 5 kg | 22.00 | 34 | TE34 = 2.0523851 % | 0.45 | 22.45 |
-| 18/10 | Aceite 1 L | 9.50 | 8 | TE8 = 0.4791697 % | 0.05 | 9.55 |
-| 15/09 | Licuadora, cuota 1/3 | 54.38 | | TEM | 3.00 | 57.38 |
+| 22/09 | Arroz 5 kg | 22.00 | 34 | (1 + TEA)^(34/360) − 1 | 0.45 | 22.45 |
+| 18/10 | Aceite 1 L | 9.50 | 8 | (1 + TEA)^(8/360) − 1 | 0.05 | 9.55 |
+| 15/09 | Licuadora, cuota 1/3 | 54.38 | | (1 + TEA)^(30/360) − 1 | 3.00 | 57.38 |
 | | **Total a pagar** | **85.88** | | | **3.50** | **89.38** |
 
 Informativo: cuota 2/3 S/ 57.37 (26/11) y cuota 3/3 S/ 57.38 (26/12).
@@ -129,7 +129,6 @@ día del corte, pago anticipado y cuota pagada con mora.
 ### Tasas
 
 - Compensatoria: `m = 360/30 = 12`, `i' = 30 %/12 = 2.5 %`
-  - `TEM = (1 + 0.025)^(30/30) − 1 = 2.5000000 %`
   - `TEA = (1 + 0.025)^(360/30) − 1 = 34.4888824 %` (se informa a la clienta, R14)
 - Moratoria: `m = 360/1 = 360`, `i' = 36 %/360 = 0.1 %`
   - `TEA = (1 + 0.001)^360 − 1 = 43.3071610 %`
@@ -150,8 +149,7 @@ día del corte, pago anticipado y cuota pagada con mora.
 
 - Conversión: `r2(49.90 × 3.520) = 175.65`
 - Gracia total: 26/09 → 05/11 = **40 días**
-- `TE40 = (1 + 0.025)^(40/30) − 1 = 3.3471459 %`
-- `Capital capitalizado = r2(175.65 × 1.033471459) = 181.53`
+- `Capital capitalizado = r2(175.65 × (1 + 0.34488824)^(40/360)) = 181.53`
 
 | Cuota | Vence | Saldo inicial | Interés | Cuota | Amortización | Saldo final |
 |---|---|---|---|---|---|---|
@@ -164,8 +162,8 @@ día del corte, pago anticipado y cuota pagada con mora.
 
 | Fecha | Concepto | Capital | Días | Tasa | Interés | Total |
 |---|---|---|---|---|---|---|
-| 03/10 | Limpieza facial | 80.00 | 33 | TE33 = 1.025^(33/30) − 1 = 2.7534120 % | 2.20 | 82.20 |
-| 25/10 | Labial | 35.00 | 11 | TE11 = 1.025^(11/30) − 1 = 0.9095069 % | 0.32 | 35.32 |
+| 03/10 | Limpieza facial | 80.00 | 33 | 1.34488824^(33/360) − 1 | 2.20 | 82.20 |
+| 25/10 | Labial | 35.00 | 11 | 1.34488824^(11/360) − 1 | 0.32 | 35.32 |
 | | **Total a pagar** | **115.00** | | | **2.52** | **117.52** |
 
 Informativo: kit importado, primera cuota S/ 48.25 el 05/12.
@@ -185,8 +183,8 @@ Libera S/ 115.00.
 | Concepto | Tasa | Monto |
 |---|---|---|
 | Exigible EC nov-2026 | | 48.25 |
-| Interés compensatorio por mora | TE10 = 1.025^(10/30) − 1 = 0.8264838 % | 0.40 |
-| Interés moratorio | TE10 = 1.001^10 − 1 = 1.0045120 % | 0.48 |
+| Interés compensatorio por mora | 1.34488824^(10/360) − 1 | 0.40 |
+| Interés moratorio | 1.4330716^(10/360) − 1 | 0.48 |
 | **Total pagado** | | **49.13** |
 
 Desglose: mora **0.48**, interés **4.94** (4.54 + 0.40), capital **43.71**. Libera S/ 43.71.

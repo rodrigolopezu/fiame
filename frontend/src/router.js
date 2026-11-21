@@ -4,12 +4,14 @@ import { sesion } from './sesion'
 const rutas = [
   { path: '/', component: () => import('./vistas/Inicio.vue') },
   { path: '/login', component: () => import('./vistas/Login.vue') },
+  { path: '/superadmin', component: () => import('./vistas/PanelSuperadmin.vue'), meta: { requiereSesion: true, roles: ['SUPERADMIN'] } },
+  { path: '/admin', component: () => import('./vistas/PanelAdmin.vue'), meta: { requiereSesion: true, roles: ['ADMIN'] } },
   { path: '/portal', component: () => import('./vistas/portal/Portal.vue') },
   { path: '/simulador', component: () => import('./vistas/simulador/SimuladorVista.vue') },
   {
     path: '/vendedor',
     component: () => import('./vistas/vendedor/Layout.vue'),
-    meta: { requiereSesion: true },
+    meta: { requiereSesion: true, roles: ['VENDEDOR'] },
     children: [
       { path: '', component: () => import('./vistas/vendedor/MenuCircular.vue') },
       { path: 'panel', component: () => import('./vistas/vendedor/Panel.vue') },
@@ -35,5 +37,9 @@ export const router = createRouter({ history: createWebHistory(), routes: rutas 
 router.beforeEach((destino) => {
   if (destino.matched.some((r) => r.meta.requiereSesion) && !sesion.token) {
     return { path: '/login', query: { siguiente: destino.fullPath } }
+  }
+  const roles = destino.matched.find(r => r.meta.roles)?.meta.roles
+  if (roles && !roles.includes(sesion.rol)) {
+    return { path: ({ SUPERADMIN: '/superadmin', ADMIN: '/admin', VENDEDOR: '/vendedor' })[sesion.rol] || '/login' }
   }
 })

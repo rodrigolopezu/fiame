@@ -72,7 +72,7 @@ class Usuario(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     usuario: Mapped[str] = mapped_column(String(60), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
-    rol: Mapped[str] = mapped_column(String(10))
+    rol: Mapped[str] = mapped_column(String(10), nullable=False)
     tienda_id: Mapped[int | None] = mapped_column(ForeignKey("tienda.id"))
     activo: Mapped[bool] = mapped_column(default=True)
     ultimo_acceso: Mapped[datetime | None] = mapped_column(DateTime)
@@ -186,6 +186,7 @@ class Venta(Base):
     tem: Mapped[Decimal | None] = mapped_column(TasaFraccion)
     estado: Mapped[str] = mapped_column(String(10), default="VIGENTE")
     registrado_por: Mapped[int] = mapped_column(ForeignKey("usuario.id"))
+    registrador: Mapped["Usuario"] = relationship(foreign_keys=[registrado_por])
     cliente: Mapped[Cliente] = relationship(back_populates="ventas")
     tasa_compensatoria: Mapped[Tasa] = relationship(foreign_keys=[tasa_compensatoria_id])
     tasa_moratoria: Mapped[Tasa] = relationship(foreign_keys=[tasa_moratoria_id])
@@ -247,6 +248,7 @@ class Pago(Base):
     anulado_en: Mapped[datetime | None] = mapped_column(DateTime)
     registrado_por: Mapped[int] = mapped_column(ForeignKey("usuario.id"))
     registrado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    registrador: Mapped["Usuario"] = relationship(foreign_keys=[registrado_por])
     detalle: Mapped[list["PagoDetalle"]] = relationship(back_populates="pago", order_by="PagoDetalle.id")
 
 

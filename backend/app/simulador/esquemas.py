@@ -107,7 +107,6 @@ class LineaCredito(BaseModel):
 class ResumenTasa(BaseModel):
     descripcion: str
     tea: Decimal
-    tem: Decimal
 
 
 class RegistroBitacora(BaseModel):
@@ -156,10 +155,10 @@ class VentaSalida(BaseModel):
     fecha_corte: date
     fecha_pago: date
     dias: int
-    tasa_periodo: Decimal
+    tea_compensatoria: Decimal = Field(description="TEA con la que se calculó el interés de la venta")
+    tea_moratoria: Decimal
     interes: Decimal
     total: Decimal
-    tem: Decimal | None
     estado: Literal["VIGENTE", "PAGADA", "ANULADA"]
     estado_cuenta: str | None
     cuotas: list[CuotaSalida]
@@ -173,7 +172,6 @@ class LineaEstadoCuenta(BaseModel):
     cuota: str | None
     capital: Decimal
     dias: int | None
-    tasa: Decimal | None
     interes: Decimal
     total: Decimal
 
@@ -188,9 +186,7 @@ class VencidoInformativo(BaseModel):
 class DeudaAlDia(BaseModel):
     fecha: date
     dias_mora: int
-    tasa_compensatoria: Decimal
     interes_compensatorio: Decimal
-    tasa_moratoria: Decimal
     interes_moratorio: Decimal
     recargo: Decimal = Field(description="Intereses por mora: compensatorio + moratorio")
     total_a_pagar: Decimal
@@ -222,9 +218,9 @@ class DetallePagoSalida(BaseModel):
     fecha_pago_pactada: date
     exigible: Decimal
     dias_mora: int
-    tasa_compensatoria_mora: Decimal
+    tea_compensatoria: Decimal
     interes_compensatorio_mora: Decimal
-    tasa_moratoria: Decimal
+    tea_moratoria: Decimal
     interes_moratorio: Decimal
     recargo_mora: Decimal = Field(description="Intereses por mora: compensatorio + moratorio")
     mora: Decimal

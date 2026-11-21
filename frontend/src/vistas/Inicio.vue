@@ -14,8 +14,8 @@ import Logo from '../components/Logo.vue'
     <div class="opciones">
       <RouterLink to="/vendedor" class="opcion principal">
         <span class="icono"><Store :size="24" :stroke-width="1.8" /></span>
-        <strong>Soy vendedor</strong>
-        <span>Registra clientes, ventas al crédito, cobros y estados de cuenta.</span>
+        <strong>Soy dueño/trabajador</strong>
+        <span>Registra clientes, ventas al crédito, cobros y estados de cuenta. Si eres dueño, también administras a tu equipo.</span>
         <span class="ir">Ingresar <ArrowRight :size="16" /></span>
       </RouterLink>
       <RouterLink to="/portal" class="opcion">
