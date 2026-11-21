@@ -32,12 +32,12 @@ const vencidos = computed(() => r.value.estados_cuenta.filter((ec) => ec.estado 
         <div class="tarjeta">
           <div class="rotulo">Compensatoria · {{ r.tasa_compensatoria.descripcion }}</div>
           <div class="valor">{{ tasa(r.tasa_compensatoria.tea) }}</div>
-          <div class="chico suave">TEA · TEM {{ tasa(r.tasa_compensatoria.tem) }}</div>
+          <div class="chico suave">TEA</div>
         </div>
         <div class="tarjeta">
           <div class="rotulo">Moratoria · {{ r.tasa_moratoria.descripcion }}</div>
           <div class="valor">{{ tasa(r.tasa_moratoria.tea) }}</div>
-          <div class="chico suave">TEA · TEM {{ tasa(r.tasa_moratoria.tem) }}</div>
+          <div class="chico suave">TEA</div>
         </div>
         <div class="tarjeta">
           <div class="rotulo">Movimientos</div>

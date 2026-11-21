@@ -5,27 +5,26 @@ import { api } from '../api'
 import { dinero, fecha, PERIODOS, tasa as fTasa } from '../formato'
 import Ayuda from './Ayuda.vue'
 import CampoTasa from './CampoTasa.vue'
+import Potencia from './Potencia.vue'
 
 const T = (tipo, valor, periodo = 'ANUAL', capitalizacion = null) => ({ tipo, periodo, valor, capitalizacion })
 
 // ---- Conversión de tasas
-const conv = ref({ tasa: T('EFECTIVA', '12'), dias: 30, pedirNominal: false, nominal: { periodo: 'ANUAL', capitalizacion: 'MENSUAL' } })
+const conv = ref({ tasa: T('NOMINAL', '24', 'ANUAL', 'QUINCENAL'), pedirNominal: false, nominal: { periodo: 'ANUAL', capitalizacion: 'MENSUAL' } })
 const convR = ref(null)
 const convE = ref('')
 const ejemplosTasa = [
-  ['4-14: TEA 12 % → TEM (0.9488793 %)', { tasa: T('EFECTIVA', '12'), dias: 30 }],
-  ['4-10: TNA 28 % c.d. → TEM (2.359840157 %)', { tasa: T('NOMINAL', '28', 'ANUAL', 'DIARIA'), dias: 30 }],
-  ['4-9: TNA 24 % c.q. → TEA (26.97346485 %)', { tasa: T('NOMINAL', '24', 'ANUAL', 'QUINCENAL'), dias: 360 }],
-  ['4-19: TEM 4.5 % → TNA c.q. (53.40579602 %)', { tasa: T('EFECTIVA', '4.5', 'MENSUAL'), dias: 30, nominal: { periodo: 'ANUAL', capitalizacion: 'QUINCENAL' } }],
+  ['4-9: TNA 24 % c.q. → TEA (26.97346485 %)', { tasa: T('NOMINAL', '24', 'ANUAL', 'QUINCENAL') }],
+  ['4-19: tasa efectiva mensual 4.5 % → TNA c.q. (53.40579602 %)', { tasa: T('EFECTIVA', '4.5', 'MENSUAL'), nominal: { periodo: 'ANUAL', capitalizacion: 'QUINCENAL' } }],
 ]
 async function convertir() {
   try {
-    convR.value = await api.tasa({ tasa: conv.value.tasa, dias: conv.value.dias, nominal: conv.value.pedirNominal ? conv.value.nominal : null })
+    convR.value = await api.tasa({ tasa: conv.value.tasa, nominal: conv.value.pedirNominal ? conv.value.nominal : null })
     convE.value = ''
   } catch (e) { convE.value = e.message; convR.value = null }
 }
 function ejemploTasa(ej) {
-  conv.value = { ...conv.value, tasa: { ...ej.tasa }, dias: ej.dias, pedirNominal: !!ej.nominal, nominal: ej.nominal || conv.value.nominal }
+  conv.value = { ...conv.value, tasa: { ...ej.tasa }, pedirNominal: !!ej.nominal, nominal: ej.nominal || conv.value.nominal }
   convertir()
 }
 
@@ -43,7 +42,7 @@ const cronR = ref(null)
 const cronE = ref('')
 const ejemplosCron = [
   ['8-1: US$ 112,000, TEA 10 %, 9 cuatrimestrales (14,537.95)', { capital: '112000', tasa: T('EFECTIVA', '10'), numero_cuotas: 9, dias_periodo: 120, dias_gracia: 0 }],
-  ['7-13b: US$ 4,499.10, TEM 2.99 %, 6 meses de gracia + 36 (245.56)', { capital: '4499.10', tasa: T('EFECTIVA', '2.99', 'MENSUAL'), numero_cuotas: 36, dias_periodo: 30, dias_gracia: 180 }],
+  ['7-13b: US$ 4,499.10, tasa mensual 2.99 %, 6 meses de gracia + 36 (245.56)', { capital: '4499.10', tasa: T('EFECTIVA', '2.99', 'MENSUAL'), numero_cuotas: 36, dias_periodo: 30, dias_gracia: 180 }],
   ['7-6: S/ 32,800, TNS 8.4 % c.d., 15 bimestrales (2,715.63)', { capital: '32800', tasa: T('NOMINAL', '8.4', 'SEMESTRAL', 'DIARIA'), numero_cuotas: 15, dias_periodo: 60, dias_gracia: 0 }],
 ]
 async function calcularCronograma() {
@@ -76,9 +75,6 @@ async function calcularCiclo() {
       <h2>Conversión de tasas</h2>
       <div class="fila"><button v-for="[nombre, ej] in ejemplosTasa" :key="nombre" class="chico" @click="ejemploTasa(ej)">{{ nombre }}</button></div>
       <CampoTasa v-model="conv.tasa" titulo="Tasa dada" />
-      <div class="grilla">
-        <label class="campo"><span>Días de la tasa buscada <Ayuda texto="30 = mensual, 360 = anual, o cualquier número de días." /></span><input v-model.number="conv.dias" type="number" min="1" /></label>
-      </div>
       <label class="check"><input v-model="conv.pedirNominal" type="checkbox" /> Calcular también la tasa nominal equivalente</label>
       <div v-if="conv.pedirNominal" class="grilla">
         <label class="campo"><span>Periodo de la nominal</span><select v-model="conv.nominal.periodo"><option v-for="[v, n] in PERIODOS" :key="v" :value="v">{{ n }}</option></select></label>
@@ -88,10 +84,7 @@ async function calcularCiclo() {
       <p v-if="convE" class="aviso">{{ convE }}</p>
       <table v-if="convR" class="resultado">
         <tbody>
-          <tr><td>{{ convR.descripcion }} → efectiva de {{ convR.dias }} días</td><td class="num"><strong>{{ fTasa(convR.tasa_efectiva) }}</strong></td></tr>
-          <tr><td>TEA</td><td class="num">{{ fTasa(convR.tea) }}</td></tr>
-          <tr><td>TEM</td><td class="num">{{ fTasa(convR.tem) }}</td></tr>
-          <tr><td>TED</td><td class="num">{{ fTasa(convR.ted) }}</td></tr>
+          <tr><td>{{ convR.descripcion }} → TEA</td><td class="num"><strong>{{ fTasa(convR.tea) }}</strong></td></tr>
           <tr v-if="convR.nominal"><td>Nominal equivalente</td><td class="num"><strong>{{ fTasa(convR.nominal) }}</strong></td></tr>
         </tbody>
       </table>
@@ -111,8 +104,8 @@ async function calcularCiclo() {
       <table v-if="intR" class="resultado">
         <tbody>
           <tr><td>Días calendario exactos</td><td class="num">{{ intR.dias }}</td></tr>
-          <tr><td>Tasa efectiva del plazo</td><td class="num">{{ fTasa(intR.tasa_efectiva) }}</td></tr>
-          <tr><td>Interés</td><td class="num">{{ dinero(intR.interes) }}</td></tr>
+          <tr><td>TEA</td><td class="num">{{ fTasa(intR.tea) }}</td></tr>
+          <tr><td>Interés = capital × [<Potencia :tea="intR.tea" :dias="intR.dias" menos-uno />]</td><td class="num">{{ dinero(intR.interes) }}</td></tr>
           <tr><td>Valor futuro</td><td class="num"><strong>{{ dinero(intR.valor_futuro) }}</strong></td></tr>
         </tbody>
       </table>
@@ -132,9 +125,10 @@ async function calcularCiclo() {
       <p v-if="cronE" class="aviso">{{ cronE }}</p>
       <template v-if="cronR">
         <p class="chico">
-          Tasa del periodo {{ fTasa(cronR.tasa_periodo) }} · capital financiado {{ dinero(cronR.capital_financiado) }}
-          <span v-if="cron.dias_gracia"> (gracia: TE {{ fTasa(cronR.tasa_gracia) }})</span>
+          TEA {{ fTasa(cronR.tea) }} · capital financiado {{ dinero(cronR.capital_financiado) }}
+          <span v-if="cron.dias_gracia"> = capital × <Potencia :tea="cronR.tea" :dias="cron.dias_gracia" /></span>
         </p>
+        <p class="chico suave">Interés de cada cuota = saldo × [<Potencia :tea="cronR.tea" :dias="cron.dias_periodo" menos-uno />]</p>
         <div class="tabla-scroll">
           <table>
             <thead><tr><th>N.°</th><th class="num">Saldo inicial</th><th class="num">Interés</th><th class="num">Cuota</th><th class="num">Amortización</th><th class="num">Saldo final</th></tr></thead>
@@ -167,8 +161,8 @@ async function calcularCiclo() {
       <p v-if="moraE" class="aviso">{{ moraE }}</p>
       <table v-if="moraR" class="resultado">
         <tbody>
-          <tr><td>Compensatorio por mora ({{ fTasa(moraR.tasa_compensatoria) }})</td><td class="num">{{ dinero(moraR.interes_compensatorio) }}</td></tr>
-          <tr><td>Moratorio ({{ fTasa(moraR.tasa_moratoria) }})</td><td class="num">{{ dinero(moraR.interes_moratorio) }}</td></tr>
+          <tr><td>Compensatorio por mora = exigible × [<Potencia :tea="moraR.tea_compensatoria" :dias="moraR.dias_mora" menos-uno />]</td><td class="num">{{ dinero(moraR.interes_compensatorio) }}</td></tr>
+          <tr><td>Moratorio = exigible × [<Potencia :tea="moraR.tea_moratoria" :dias="moraR.dias_mora" menos-uno />]</td><td class="num">{{ dinero(moraR.interes_moratorio) }}</td></tr>
           <tr><td>Total a pagar</td><td class="num"><strong>{{ dinero(moraR.total_a_pagar) }}</strong></td></tr>
         </tbody>
       </table>

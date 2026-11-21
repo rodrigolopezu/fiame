@@ -1,7 +1,8 @@
 <script setup>
-import { dinero, fecha, tasa } from '../formato'
+import { dinero, fecha, teaTexto } from '../formato'
 import { diaMes, diaYFecha } from '../lenguaje'
 import { usarSimple } from '../vista'
+import Potencia from './Potencia.vue'
 import Termino from './Termino.vue'
 
 const props = defineProps({
@@ -88,14 +89,34 @@ const ESTADO_SIMPLE = { VIGENTE: 'Por pagar', PAGADA: 'Pagada', ANULADA: 'Anulad
       <div><dt><Termino clave="capital">Capital</Termino> (consume línea)</dt><dd>{{ dinero(venta.capital, venta.moneda) }}</dd></div>
       <div v-if="venta.tipo_cambio"><dt><Termino clave="tipoCambio">Tipo de cambio</Termino></dt><dd>{{ venta.tipo_cambio }}</dd></div>
       <div><dt>Tasa pactada</dt><dd>{{ venta.tasa_compensatoria }}</dd></div>
+      <div><dt><Termino clave="tea">TEA</Termino> aplicada</dt><dd>{{ teaTexto(venta.tea_compensatoria) }}</dd></div>
       <div><dt><Termino clave="corte">Corte</Termino> / pago del ciclo</dt><dd>{{ fecha(venta.fecha_corte) }} · {{ fecha(venta.fecha_pago) }}</dd></div>
       <div><dt><template v-if="venta.modalidad === 'CUOTAS'"><Termino clave="gracia">Días de gracia</Termino></template><template v-else>Días hasta el pago</template></dt><dd>{{ venta.dias }}</dd></div>
-      <div><dt><Termino clave="tasaPlazo">TE{{ venta.dias }}</Termino> (tasa del plazo)</dt><dd>{{ tasa(venta.tasa_periodo) }}</dd></div>
       <div><dt>{{ venta.modalidad === 'CUOTAS' ? 'Interés de la gracia' : 'Interés compensatorio' }}</dt><dd>{{ dinero(venta.interes, venta.moneda) }}</dd></div>
       <div><dt><template v-if="venta.modalidad === 'CUOTAS'"><Termino clave="capitalizado">Capital capitalizado</Termino></template><template v-else>Total a pagar</template></dt><dd><strong>{{ dinero(venta.total, venta.moneda) }}</strong></dd></div>
-      <div v-if="venta.tem"><dt><Termino clave="tem">TEM</Termino></dt><dd>{{ tasa(venta.tem) }}</dd></div>
       <div v-if="venta.estado_cuenta"><dt>Cobrada en</dt><dd>{{ venta.estado_cuenta }}</dd></div>
     </dl>
+
+    <div class="formulas">
+      <template v-if="venta.modalidad === 'FIN_DE_MES'">
+        <p>
+          <strong>Interés</strong> = capital × [(1 + TEA)<sup>días/360</sup> − 1]
+          = {{ dinero(venta.capital, venta.moneda) }} × [<Potencia :tea="venta.tea_compensatoria" :dias="venta.dias" menos-uno />]
+          = <strong>{{ dinero(venta.interes, venta.moneda) }}</strong>
+        </p>
+      </template>
+      <template v-else>
+        <p>
+          <strong>Capital capitalizado</strong> = capital × (1 + TEA)<sup>días de gracia/360</sup>
+          = {{ dinero(venta.capital, venta.moneda) }} × <Potencia :tea="venta.tea_compensatoria" :dias="venta.dias" />
+          = <strong>{{ dinero(venta.total, venta.moneda) }}</strong>
+        </p>
+        <p>
+          <strong>Cuota</strong> = capitalizado × i × (1 + i)<sup>n</sup> / [(1 + i)<sup>n</sup> − 1],
+          con i = (1 + TEA)<sup>30/360</sup> − 1 = <Potencia :tea="venta.tea_compensatoria" :dias="30" menos-uno /> y n = {{ venta.numero_cuotas }}
+        </p>
+      </template>
+    </div>
 
     <div v-if="venta.cuotas.length" class="tabla-scroll">
       <h4>Cronograma · <Termino clave="frances">método francés vencido ordinario</Termino></h4>
@@ -130,6 +151,8 @@ const ESTADO_SIMPLE = { VIGENTE: 'Por pagar', PAGADA: 'Pagada', ANULADA: 'Anulad
 dt { font-size: 12px; color: var(--suave); }
 dd { margin: 0; font-variant-numeric: tabular-nums; }
 .frase { font-size: 16px; margin-top: 2px; }
+.formulas { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--panel-suave); border: 1px solid var(--linea); border-radius: var(--radio-chico); font-size: 13px; }
+.formulas sup { font-size: 0.75em; line-height: 0; }
 .lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .lista li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--linea); font-variant-numeric: tabular-nums; }
 .lista li:last-child { border-bottom: none; }

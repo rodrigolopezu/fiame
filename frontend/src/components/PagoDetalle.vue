@@ -1,7 +1,8 @@
 <script setup>
-import { dinero, fecha, MEDIOS, tasa } from '../formato'
+import { dinero, fecha, MEDIOS } from '../formato'
 import { diaYFecha, mes } from '../lenguaje'
 import { usarSimple } from '../vista'
+import Potencia from './Potencia.vue'
 import Termino from './Termino.vue'
 
 const props = defineProps({
@@ -65,8 +66,8 @@ const medio = (m) => Object.fromEntries(MEDIOS)[m] || m
             <td>{{ d.estado_cuenta }} <span class="suave chico">vencía {{ fecha(d.fecha_pago_pactada) }}</span></td>
             <td class="num">{{ dinero(d.exigible, moneda) }}</td>
             <td class="num">{{ d.dias_mora }}</td>
-            <td class="num">{{ dinero(d.interes_compensatorio_mora, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">{{ tasa(d.tasa_compensatoria_mora) }}</span></td>
-            <td class="num">{{ dinero(d.interes_moratorio, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">{{ tasa(d.tasa_moratoria) }}</span></td>
+            <td class="num">{{ dinero(d.interes_compensatorio_mora, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">× [<Potencia :tea="d.tea_compensatoria" :dias="d.dias_mora" menos-uno />]</span></td>
+            <td class="num">{{ dinero(d.interes_moratorio, moneda) }}<br /><span class="suave chico" v-if="d.dias_mora">× [<Potencia :tea="d.tea_moratoria" :dias="d.dias_mora" menos-uno />]</span></td>
             <td class="num">{{ dinero(d.mora, moneda) }}</td>
             <td class="num">{{ dinero(d.interes, moneda) }}</td>
             <td class="num">{{ dinero(d.capital, moneda) }}</td>

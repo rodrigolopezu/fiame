@@ -164,8 +164,7 @@ Cambiar los valores por defecto no afecta a clientes ya registrados.
   términos financieros. Por ejemplo: "Ana tenía que pagar S/ 30.72 hasta el sábado 05/09" y
   "Se atrasó 25 días: por el atraso se sumaron S/ 1.42, así que hoy debe S/ 32.14". Las
   frases se redactan según quién lee: el vendedor ("Juan debe…") o el cliente ("Debes…").
-- **Detallada**: todas las cifras y términos (capital, TEA, TEM, tasa del plazo,
-  amortización, intereses compensatorio y moratorio, línea liberada), cada término con un
+- **Detallada**: todas las cifras y términos (capital, TEA, amortización, intereses compensatorio y moratorio, línea liberada), cada término con un
   ícono **?** que explica su significado en una frase.
 - El simulador se muestra siempre en vista detallada, porque es una herramienta de
   verificación.

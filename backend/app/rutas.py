@@ -36,33 +36,20 @@ class NominalBuscada(BaseModel):
 
 class RespuestaTasa(BaseModel):
     descripcion: str
-    dias: int
-    tasa_efectiva: Decimal
     tea: Decimal
-    tem: Decimal
-    ted: Decimal
     nominal: Decimal | None
 
 
 class SolicitudTasa(BaseModel):
     tasa: e.TasaEntrada
-    dias: int = Field(default=30, ge=1, description="Días de la tasa efectiva buscada")
     nominal: NominalBuscada | None = None
 
 
 @router.post("/calculadora/tasa", response_model=RespuestaTasa)
 def convertir_tasa(s: SolicitudTasa):
-    """Convierte una tasa a su efectiva de N días, TEA, TEM y, si se pide, a una nominal."""
+    """Convierte una tasa a su TEA y, si se pide, a una nominal equivalente."""
     tasa = s.tasa.a_tasa()
-    respuesta = {
-        "descripcion": tasa.descripcion(),
-        "dias": s.dias,
-        "tasa_efectiva": a_porcentaje(tasa.efectiva(s.dias)),
-        "tea": a_porcentaje(tasa.tea()),
-        "tem": a_porcentaje(tasa.tem()),
-        "ted": a_porcentaje(tasa.efectiva(1)),
-        "nominal": None,
-    }
+    respuesta = {"descripcion": tasa.descripcion(), "tea": a_porcentaje(tasa.tea()), "nominal": None}
     if s.nominal:
         respuesta["nominal"] = a_porcentaje(nominal_equivalente(
             tasa.efectiva(s.nominal.periodo.dias), s.nominal.periodo.dias,
@@ -86,7 +73,7 @@ class SolicitudInteres(BaseModel):
 
 class RespuestaInteres(BaseModel):
     dias: int
-    tasa_efectiva: Decimal
+    tea: Decimal
     interes: Decimal
     valor_futuro: Decimal
 
@@ -97,7 +84,7 @@ def calcular_interes(s: SolicitudInteres):
     dias = s.dias if s.dias is not None else dias_entre(s.fecha_inicio, s.fecha_fin)
     tasa = s.tasa.a_tasa()
     i = interes(s.capital, tasa, dias)
-    return {"dias": dias, "tasa_efectiva": a_porcentaje(tasa.efectiva(dias)), "interes": i,
+    return {"dias": dias, "tea": a_porcentaje(tasa.tea()), "interes": i,
             "valor_futuro": s.capital + i}
 
 
@@ -119,9 +106,8 @@ class FilaSalida(BaseModel):
 
 
 class RespuestaCronograma(BaseModel):
-    tasa_gracia: Decimal
+    tea: Decimal
     capital_financiado: Decimal
-    tasa_periodo: Decimal
     filas: list[FilaSalida]
     total_interes: Decimal
     total_pagado: Decimal
@@ -136,8 +122,8 @@ def calcular_cronograma(s: SolicitudCronograma):
     tep = tasa.efectiva(s.dias_periodo)
     filas = cronograma_frances(capital, tep, s.numero_cuotas)
     return {
-        "tasa_gracia": a_porcentaje(tasa_gracia), "capital_financiado": capital,
-        "tasa_periodo": a_porcentaje(tep), "filas": [FilaSalida(**vars(f)) for f in filas],
+        "tea": a_porcentaje(tasa.tea()), "capital_financiado": capital,
+        "filas": [FilaSalida(**vars(f)) for f in filas],
         "total_interes": sum((f.interes for f in filas), Decimal("0.00")),
         "total_pagado": sum((f.cuota for f in filas), Decimal("0.00")),
     }
@@ -152,9 +138,9 @@ class SolicitudMora(BaseModel):
 
 class RespuestaMora(BaseModel):
     dias_mora: int
-    tasa_compensatoria: Decimal
+    tea_compensatoria: Decimal
     interes_compensatorio: Decimal
-    tasa_moratoria: Decimal
+    tea_moratoria: Decimal
     interes_moratorio: Decimal
     total_a_pagar: Decimal
 
@@ -164,8 +150,8 @@ def calcular_mora(s: SolicitudMora):
     """Interés compensatorio y moratorio por días de atraso, ambos sobre el exigible."""
     m = intereses_por_mora(s.exigible, s.tasa_compensatoria.a_tasa(), s.tasa_moratoria.a_tasa(), s.dias_mora)
     return {
-        "dias_mora": m.dias, "tasa_compensatoria": a_porcentaje(m.tasa_compensatoria),
-        "interes_compensatorio": m.interes_compensatorio, "tasa_moratoria": a_porcentaje(m.tasa_moratoria),
+        "dias_mora": m.dias, "tea_compensatoria": a_porcentaje(s.tasa_compensatoria.a_tasa().tea()),
+        "interes_compensatorio": m.interes_compensatorio, "tea_moratoria": a_porcentaje(s.tasa_moratoria.a_tasa().tea()),
         "interes_moratorio": m.interes_moratorio, "total_a_pagar": s.exigible + m.total,
     }
 

@@ -125,8 +125,9 @@ def venta_vista(v: m.Venta, cliente: m.Cliente) -> VentaVista:
                for d in v.detalle],
         capital=v.capital, tasa_compensatoria=v.tasa_compensatoria.a_dominio().descripcion(),
         tasa_moratoria=v.tasa_moratoria.a_dominio().descripcion(), fecha_corte=v.fecha_corte,
-        fecha_pago=v.fecha_pago, dias=v.dias, tasa_periodo=a_porcentaje(v.tasa_periodo), interes=v.interes,
-        total=v.total, tem=a_porcentaje(v.tem) if v.tem is not None else None, estado=v.estado,
+        fecha_pago=v.fecha_pago, dias=v.dias, tea_compensatoria=a_porcentaje(v.tasa_compensatoria.tea),
+        tea_moratoria=a_porcentaje(v.tasa_moratoria.tea), interes=v.interes,
+        total=v.total, estado=v.estado,
         estado_cuenta=codigo(v.fecha_corte) if v.modalidad == "FIN_DE_MES" and v.id else None,
         cuotas=[
             e.CuotaSalida(numero=c.numero, fecha_corte=c.fecha_corte, fecha_vencimiento=c.fecha_vencimiento,
@@ -155,8 +156,8 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
         liq = liquidar(ec.total_capital, ec.total_interes, ec.tasa_compensatoria.a_dominio(),
                        ec.tasa_moratoria.a_dominio(), ec.fecha_pago, hoy)
         deuda = e.DeudaAlDia(
-            fecha=hoy, dias_mora=liq.dias_mora, tasa_compensatoria=a_porcentaje(liq.tasa_compensatoria_mora),
-            interes_compensatorio=liq.interes_compensatorio_mora, tasa_moratoria=a_porcentaje(liq.tasa_moratoria),
+            fecha=hoy, dias_mora=liq.dias_mora,
+            interes_compensatorio=liq.interes_compensatorio_mora,
             interes_moratorio=liq.interes_moratorio, recargo=liq.total - liq.exigible, total_a_pagar=liq.total)
 
     # Informativo: estados anteriores que al momento del corte seguían vencidos.
@@ -189,7 +190,6 @@ def estado_cuenta_vista(s: Session, ec: m.EstadoCuenta, hoy: date) -> EstadoCuen
                 tipo=l.tipo, venta=l.venta.id, fecha=l.venta.fecha, descripcion=l.venta.descripcion,
                 cuota=f"{l.cuota.numero}/{l.venta.numero_cuotas}" if l.cuota else None, capital=l.capital,
                 dias=None if l.cuota else l.venta.dias,
-                tasa=a_porcentaje(l.venta.tem if l.cuota else l.venta.tasa_periodo),
                 interes=l.interes, total=l.total)
             for l in credito.lineas_del_corte(cliente, ec.fecha_corte)
         ],
@@ -208,9 +208,9 @@ def pago_vista(p: m.Pago) -> PagoVista:
             e.DetallePagoSalida(
                 estado_cuenta=d.estado_cuenta.codigo, fecha_pago_pactada=d.estado_cuenta.fecha_pago,
                 exigible=d.exigible, dias_mora=d.dias_mora,
-                tasa_compensatoria_mora=a_porcentaje(d.tasa_compensatoria_mora),
+                tea_compensatoria=a_porcentaje(d.estado_cuenta.tasa_compensatoria.tea),
                 interes_compensatorio_mora=d.interes_compensatorio_mora,
-                tasa_moratoria=a_porcentaje(d.tasa_moratoria), interes_moratorio=d.interes_moratorio,
+                tea_moratoria=a_porcentaje(d.estado_cuenta.tasa_moratoria.tea), interes_moratorio=d.interes_moratorio,
                 recargo_mora=d.total - d.exigible, mora=d.interes_moratorio, interes=d.interes, capital=d.capital, total=d.total,
                 libera_linea=sum((l.libera_linea for l in credito.lineas_del_corte(cliente, d.estado_cuenta.fecha_corte)), CERO),
             )

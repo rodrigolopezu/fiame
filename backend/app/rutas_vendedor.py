@@ -369,9 +369,9 @@ def ver_liquidacion(cliente_id: int, cantidad: int = 1, c: Contexto = Depends(co
     filas = [{
         "estado_cuenta": d.estado_cuenta.codigo, "fecha_pago_pactada": d.estado_cuenta.fecha_pago,
         "exigible": d.liquidacion.exigible, "dias_mora": d.liquidacion.dias_mora,
-        "tasa_compensatoria_mora": a_porcentaje(d.liquidacion.tasa_compensatoria_mora),
+        "tea_compensatoria": a_porcentaje(d.estado_cuenta.tasa_compensatoria.tea),
         "interes_compensatorio_mora": d.liquidacion.interes_compensatorio_mora,
-        "tasa_moratoria": a_porcentaje(d.liquidacion.tasa_moratoria),
+        "tea_moratoria": a_porcentaje(d.estado_cuenta.tasa_moratoria.tea),
         "interes_moratorio": d.liquidacion.interes_moratorio,
         "recargo_mora": d.liquidacion.total - d.liquidacion.exigible, "mora": d.liquidacion.mora,
         "interes": d.liquidacion.interes, "capital": d.liquidacion.capital, "total": d.liquidacion.total,

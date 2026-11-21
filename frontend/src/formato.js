@@ -18,6 +18,12 @@ export function tasa(valor) {
   return `${valor} %`
 }
 
+/** La TEA sin ceros de sobra: "24 %" o "34.4888824 %". */
+export function teaTexto(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `${Number(valor)} %`
+}
+
 export function fecha(iso) {
   if (!iso) return '—'
   const [a, m, d] = iso.split('-')
